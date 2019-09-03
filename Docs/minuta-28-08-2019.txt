@@ -1,0 +1,45 @@
+agregar campos de numero de orden , placas y cita cuando ea necesario
+
+inicio de sesion para usuarios de agencia
+
+parte de correos se elimina, se tienen que tener solamente configurados por defecto
+
+correos gerentes servicio, procesos, marca
+
+Atendida por aprobada
+
+aceptar por parte de consultor
+
+se mostrara en proceso con fecha y hora de entrega  con el seguimiento en redmine leer los datos
+
+cerrar solicitud
+
+tipo de peticion 
+    requerimiento 
+    soporte
+    duda (esta se queda en el filro de la app)
+
+Flujo de proceso en texto de problema real y problema de duda.
+Cambiar applicacion por modulo en solicitud y detalle
+
+Acordamos lo siguiente
+    Cambiar los menús por el standar.
+    Agregar los campos de numero de orden,placas y cita cuando se levante la solicitud así como en detalle.
+    Liga especifica cuando se caigan los tableros, por ejemplo: https://capnet2.ddns.com/mesa-ayuda/nueva/F235
+    Liga que abre tableros, ejemplo: https://capnet2.ddns.com/mesa-ayuda/nueva/F235?usuario=juanp 
+    Eliminar parte de agregar correos.
+    Solamente se mandan noficiaciones a correos previamente configurados, regularmente son: gerentes de servicio, procesos, marca y consultor de la marca.
+    Se cambio el texto de Aprobada por Atendida en los botones en la parte de agencia
+    Se cambio el texto de Aprobar por Aceptar en la parte de consultor
+    En el boton Aceptar debe abrir un pop-up en el cual tendrá:
+        A quien se asignará
+        Fecha y Hora estimada
+        tipo de peticion:
+            soporte 
+            configuracion
+    Se cambia rechazar por cerrar cuando la solicitud no pase a REDMINE
+    Boton de Cierre de solicitud debe de abrir un pop-up en el cual tendrá:
+        motivo de Cierre:
+            Error de proceso
+            Duda
+        detalle de cierre
