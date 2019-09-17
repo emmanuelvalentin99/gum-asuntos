@@ -1,73 +1,82 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
-using dotnet.Models;
-using System.Text.Encodings.Web;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using Newtonsoft.Json.Linq;
+using System.Dynamic;
 using System.Net.Http;
-using System.Net;
-
-namespace dotnet.Controllers
+using System.Net.Http.Headers;
+using System.Threading.Tasks;
+using Microsoft.AspNetCore.Http;
+using System.Text;
+using Microsoft.AspNetCore.Cors;
+namespace Nueva_carpeta.Controllers
 {
-    public class RedmineController : Controller
+    [Route("api/redmine")]
+    [ApiController]
+    public class RedmineController : ControllerBase
     {
-        public string Index()
+        // GET api/values
+        [HttpGet]
+        public ActionResult<IEnumerable<string>> Get()
         {
-            return "default message";
+            return new string[] { "value1", "value2" };
         }
 
-        public string addIssue(){
-              var TARGETURL = "http://capnet2.ddns.net:3101/issues.json";
+        // GET api/values/5
+        [HttpGet("{id}")]
+        public ActionResult<string> Get(int id)
+        {
+            return "value";
+        }
+        
+        public class crearPeticionModel{
+            
+            
+            public string asunto{get;set;}
+            public string categoria{get;set;}
+            public string modulo{get;set;}
+            public string descripcion{get;set;}
+            public List<IFormFile> evidencias{get;set;}
+            
+        }
 
-               HttpClientHandler handler = new HttpClientHandler()
-            {
-                Proxy = new WebProxy("http://127.0.0.1:5003"),
-                UseProxy = true,
-            };
-
-            Console.WriteLine("GET: + " + TARGETURL);
-
-            // ... Use HttpClient.            
-            HttpClient client = new HttpClient(handler);
-
+        // POST api/values
+        [EnableCors("AllowOrigin")]
+        [HttpPost("crearPeticion")]
+        public async Task<object> crearPeticion([FromForm] crearPeticionModel payloadJO)
+        {
+            
+            var client = new HttpClient();
             var byteArray = Encoding.ASCII.GetBytes("emmanuel:22.05.97E");
-            client.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Basic", Convert.ToBase64String(byteArray));
-
-            HttpResponseMessage response = await client.GetAsync(TARGETURL);
-            HttpContent content = response.Content;
-            Console.WriteLine("Response StatusCode: " + (int)response.StatusCode);
-
-            // ... Read the string.
-            string result = await content.ReadAsStringAsync();
-
-
-            return result;
+            var request = new HttpRequestMessage(HttpMethod.Post, "http://capnet2.ddns.net:3101/issues.json");
+            request.Headers.Add("Authorization", "Basic " + Convert.ToBase64String(byteArray));// recuerda convertir esto a base 64, no sé si escrib
+            var body = JObject.FromObject(new
+            {
+                issue = new
+                {
+                    project_id = 1,
+                    subject = payloadJO.asunto,
+                    description = payloadJO.descripcion
+                }
+            }).ToString();
+            request.Content = new StringContent(body, Encoding.UTF8, "application/json");
+            var respuesta = await client.SendAsync(request);
+            dynamic payloadRespuesta = JObject.Parse(await respuesta.Content.ReadAsStringAsync()).ToObject(typeof(ExpandoObject));
+            return "La petición ha sido creada con el ID de redmine " + payloadRespuesta.issue.id.ToString();
         }
 
-        public string HelloWorld(){
-
-            return "Hola mundo desde C#";
-        }
-        public string Default(string name,int veces){
-
-            return HtmlEncoder.Default.Encode($"hola "+name+" desde default: "+veces);
-        }
-
-        public IActionResult Privacy()
+        // PUT api/values/5
+        [HttpPut("{id}")]
+        public void Put(int id, [FromBody] string value)
         {
-            return View();
         }
 
-        [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
-        public IActionResult Error()
+        // DELETE api/values/5
+        [HttpDelete("{id}")]
+        public void Delete(int id)
         {
-            return View(new ErrorViewModel { RequestId = Activity.Current?.Id ?? HttpContext.TraceIdentifier });
         }
     }
 }

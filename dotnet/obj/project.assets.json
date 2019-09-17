@@ -12081,11 +12081,11 @@
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "C:\\Users\\neyer\\Documents\\Trabajo\\CapNet\\WORKSPACE\\Mesa-de-Ayuda\\dotnet\\dotnet.csproj",
-      "projectName": "dotnet",
-      "projectPath": "C:\\Users\\neyer\\Documents\\Trabajo\\CapNet\\WORKSPACE\\Mesa-de-Ayuda\\dotnet\\dotnet.csproj",
+      "projectUniqueName": "C:\\Users\\neyer\\Documents\\Trabajo\\CapNet\\WORKSPACE\\Mesa-de-Ayuda\\Nueva carpeta\\Nueva carpeta.csproj",
+      "projectName": "Nueva carpeta",
+      "projectPath": "C:\\Users\\neyer\\Documents\\Trabajo\\CapNet\\WORKSPACE\\Mesa-de-Ayuda\\Nueva carpeta\\Nueva carpeta.csproj",
       "packagesPath": "C:\\Users\\neyer\\.nuget\\packages\\",
-      "outputPath": "C:\\Users\\neyer\\Documents\\Trabajo\\CapNet\\WORKSPACE\\Mesa-de-Ayuda\\dotnet\\obj\\",
+      "outputPath": "C:\\Users\\neyer\\Documents\\Trabajo\\CapNet\\WORKSPACE\\Mesa-de-Ayuda\\Nueva carpeta\\obj\\",
       "projectStyle": "PackageReference",
       "fallbackFolders": [
         "C:\\Program Files\\dotnet\\sdk\\NuGetFallbackFolder"
