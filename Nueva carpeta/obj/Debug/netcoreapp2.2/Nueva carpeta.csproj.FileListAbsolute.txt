@@ -1,0 +1,14 @@
+C:\Users\neyer\Documents\Trabajo\CapNet\WORKSPACE\Mesa-de-Ayuda\Nueva carpeta\obj\Debug\netcoreapp2.2\Nueva carpeta.csprojAssemblyReference.cache
+C:\Users\neyer\Documents\Trabajo\CapNet\WORKSPACE\Mesa-de-Ayuda\Nueva carpeta\obj\Debug\netcoreapp2.2\Nueva carpeta.csproj.CoreCompileInputs.cache
+C:\Users\neyer\Documents\Trabajo\CapNet\WORKSPACE\Mesa-de-Ayuda\Nueva carpeta\obj\Debug\netcoreapp2.2\Nueva carpeta.RazorAssemblyInfo.cache
+C:\Users\neyer\Documents\Trabajo\CapNet\WORKSPACE\Mesa-de-Ayuda\Nueva carpeta\obj\Debug\netcoreapp2.2\Nueva carpeta.RazorAssemblyInfo.cs
+C:\Users\neyer\Documents\Trabajo\CapNet\WORKSPACE\Mesa-de-Ayuda\Nueva carpeta\obj\Debug\netcoreapp2.2\Nueva carpeta.AssemblyInfoInputs.cache
+C:\Users\neyer\Documents\Trabajo\CapNet\WORKSPACE\Mesa-de-Ayuda\Nueva carpeta\obj\Debug\netcoreapp2.2\Nueva carpeta.AssemblyInfo.cs
+C:\Users\neyer\Documents\Trabajo\CapNet\WORKSPACE\Mesa-de-Ayuda\Nueva carpeta\bin\Debug\netcoreapp2.2\Nueva carpeta.deps.json
+C:\Users\neyer\Documents\Trabajo\CapNet\WORKSPACE\Mesa-de-Ayuda\Nueva carpeta\bin\Debug\netcoreapp2.2\Nueva carpeta.runtimeconfig.json
+C:\Users\neyer\Documents\Trabajo\CapNet\WORKSPACE\Mesa-de-Ayuda\Nueva carpeta\bin\Debug\netcoreapp2.2\Nueva carpeta.runtimeconfig.dev.json
+C:\Users\neyer\Documents\Trabajo\CapNet\WORKSPACE\Mesa-de-Ayuda\Nueva carpeta\bin\Debug\netcoreapp2.2\Nueva carpeta.dll
+C:\Users\neyer\Documents\Trabajo\CapNet\WORKSPACE\Mesa-de-Ayuda\Nueva carpeta\bin\Debug\netcoreapp2.2\Nueva carpeta.pdb
+C:\Users\neyer\Documents\Trabajo\CapNet\WORKSPACE\Mesa-de-Ayuda\Nueva carpeta\obj\Debug\netcoreapp2.2\Nueva carpeta.RazorTargetAssemblyInfo.cache
+C:\Users\neyer\Documents\Trabajo\CapNet\WORKSPACE\Mesa-de-Ayuda\Nueva carpeta\obj\Debug\netcoreapp2.2\Nueva carpeta.dll
+C:\Users\neyer\Documents\Trabajo\CapNet\WORKSPACE\Mesa-de-Ayuda\Nueva carpeta\obj\Debug\netcoreapp2.2\Nueva carpeta.pdb
