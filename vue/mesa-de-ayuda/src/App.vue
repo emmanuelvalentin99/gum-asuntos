@@ -3,18 +3,21 @@
 
     <HelloWorld msg=""/>
     <solicitud />
+    <listaSolicitudesConsultor />
   </div>
 </template>
 
 <script>
 import HelloWorld from './components/HelloWorld.vue'
 import solicitud from './components/solicitud.vue'
+import listaSolicitudesConsultor from './components/listaSolicitudesConsultor.vue'
 
 export default {
   name: 'app',
   components: {
     HelloWorld,
-    solicitud
+    solicitud,
+    listaSolicitudesConsultor
   }
 }
 </script>

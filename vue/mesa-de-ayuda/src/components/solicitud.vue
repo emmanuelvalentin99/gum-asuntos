@@ -1,7 +1,7 @@
 <template lang="pug">
     div(class="container")
-        div(class="col-sm-1 offset-sm-11")
-            a(href="#" class="btn btn-dark") Atras
+        div().row.col-sm-1.offset-sm-11
+            a(href="#" ).btn.btn-dark Atrás
         div(class="col-sm12")
             form(v-on:submit.prevent="sendSolicitud()")
                 div(class="form-row")
@@ -16,8 +16,8 @@
                         select( v-model="form.modulo" ).form-control
                           option(v-for="mod in modulo" v-bind:value="mod") {{mod}}
                 div(class="form-group")
-                    label( placeholder="Descripción..." for="exampleFormControlTextarea1") Descripcion
-                    textarea( v-model="form.descripcion" class="form-control" id="exampleFormControlTextarea1" rows="3")
+                    label(  for="exampleFormControlTextarea1") Descripcion
+                    textarea( placeholder="Descripción..." v-model="form.descripcion" class="form-control" id="exampleFormControlTextarea1" rows="4")
                 div(class="form-group")
                     div(class="col-sm-9")
                       div(class="custom-file")
@@ -38,6 +38,27 @@
 export default {
   data() {
     return {
+        dataResponse:{
+        agencia: "Mazda Fulanito",
+        modulos: [
+          {
+            categoria: "Tableros",
+            modulo: "Citas"
+          },
+          {
+            categoria: "Tableros",
+            modulo: "Asesor"
+          },
+          {
+            categoria: "SSL",
+            modulo: "Asesor"
+          },
+          {
+            categoria: "SSL",
+            modulo: "Técnico"
+          }
+        ]
+      },
       categoria:["Tableros","CRM","SSL","Citas","OAS"],
       modulo:["KPIS","Modulo de citas","Recepcion","Filtros","Correos"],
       evidencias:[],
@@ -45,6 +66,7 @@ export default {
         asunto:"",
         categoria:"",
         modulo:"",
+        email:"",
         descripcion:"",
         evidencias:[]
       }
@@ -83,6 +105,7 @@ export default {
       
       this.form.evidencias=[];
       this.form.asunto="";
+      this.form.email="";
       this.form.categoria="";
       this.form.modulo="";
       this.form.descripcion="";

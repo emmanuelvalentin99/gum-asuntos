@@ -24,10 +24,20 @@ create table ma.agencia(
 id int not null,
 nombre nvarchar(80),
 grupo nvarchar(60),
-email nvarchar(60),
-telefono nvarchar(20),
 constraint pk_ma_agencia primary key (id)
 )
+
+create table ma.contacto(
+id int not null,
+nombre nvarchar(80),
+telefono nvarchar(20),
+email nvarchar(80),
+cargo nvarchar(50),
+id_agencia int not null
+constraint pk_ma_contacto primary key (id),
+constraint fk_ma_agencia_contacto foreign key (id_agencia) references ma.agencia(id)
+)
+
 
 create table ma.motivo_cierre(
 id int not null,
@@ -51,12 +61,13 @@ id_usuario int,
 id_motivo_cierre int,
 id_peticion_redmine nvarchar(45),
 descripcion nvarchar(500),
-no_orden varchar(50),
-no_cita varchar(50),
-no_placas varchar (50),
+no_orden nvarchar(50),
+no_cita nvarchar(50),
+no_placas nvarchar (50),
+email nvarchar(80),
 fecha_registro datetime,
 fecha_actualizacion datetime,
-estado_solicitud varchar(50),
+estado_solicitud nvarchar(50),
 constraint pk_ma_solicitud primary key (id),
 constraint fk_ma_agencia_solicitud foreign key (id_agencia) references ma.agencia(id),
 constraint fk_ma_modulo_solicitud foreign key (id_modulo) references ma.modulo(id),
