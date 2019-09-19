@@ -12,7 +12,7 @@
                         th(scope="col") 
                         th(scope="col") Fecha Actualización
                 tbody()
-                    tr(v-for="solicitud in solicitudes")
+                    tr(v-for="solicitud in solicitudes" v-if="solicitud.estado=='abierta'")
                         td  
                             div().row
                                 div().col-sm-12
@@ -30,7 +30,7 @@
                                 div().col-sm-12
                                     button(type="button" class="" data-toggle="modal" v-bind:data-target="'#modal-detalle-'+solicitud.id").btn.btn-primary Detalles
                                     div(v-bind:id="'modal-detalle-'+solicitud.id" tabindex="-1" role="dialog" aria-labelledby="myExtraLargeModalLabel" aria-hidden="true").modal.fade
-                                        div(class="" role="document").modal-dialog.modal-lg
+                                        div(class="" role="document").modal-dialog.modal-lg.modal-dialog-scrollable
                                             div().modal-content
                                                 div().modal-header
                                                     h5(id="exampleModalLabel").modal-title Detalle Solicitud
@@ -73,7 +73,7 @@
                                                                 textarea(v-bind:value="solicitud.evidencia" rows="4").form-control
                                                 div().modal-footer
                                                     button(type="button" ).btn.btn-success Aceptar
-                                                    button(type="button"  data-dismiss="modal").btn.btn-danger Cerrar
+                                                    button(type="button"  data-toggle="modal" v-bind:data-target="'#modal-cerrar-'+solicitud.id").btn.btn-danger Cerrar
                                 div().col-sm-12
                                     button(type="button" class="" ).btn.btn-success Aceptar                              
                                 div().col-sm-12
@@ -128,6 +128,7 @@ export default {
             {
                 id:1,
                 asunto:"asunto 1",
+                estado: "abierta",
                 agencia:{
                     nombre:"agencia 1",
                      contacto:[
@@ -158,6 +159,7 @@ export default {
             },{
                 id:2,
                 asunto:"asunto 2",
+                estado: "abierta",
                 agencia:{
                     nombre:"agencia 2",
                     contacto:[

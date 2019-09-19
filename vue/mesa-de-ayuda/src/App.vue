@@ -1,23 +1,25 @@
-<template>
-  <div id="app">
+<template lang="pug">
+  div(id="app")
 
-    <HelloWorld msg=""/>
-    <solicitud />
-    <listaSolicitudesConsultor />
-  </div>
+    HelloWorld(msg="")
+    solicitud()
+    listaSolicitudesConsultor()
+    historialSolicitudesConsultor()
 </template>
 
 <script>
 import HelloWorld from './components/HelloWorld.vue'
 import solicitud from './components/solicitud.vue'
 import listaSolicitudesConsultor from './components/listaSolicitudesConsultor.vue'
+import historialSolicitudesConsultor from './components/historialSolicitudesConsultor.vue'
 
 export default {
   name: 'app',
   components: {
     HelloWorld,
     solicitud,
-    listaSolicitudesConsultor
+    listaSolicitudesConsultor,
+    historialSolicitudesConsultor
   }
 }
 </script>
