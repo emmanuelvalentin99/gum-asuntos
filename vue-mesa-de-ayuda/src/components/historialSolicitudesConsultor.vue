@@ -11,6 +11,71 @@
                         th(scope="col") Estado de Solicitud
                         th(scope="col") Fecha Actualización
                 tbody()
+                     tr(v-for="solicitud in solicitudes" v-if="solicitud.estado!='abierta'")
+                        td  
+                            div().row
+                                div().col-sm-12
+                                    p {{solicitud.id}}
+                        td  
+                            div().row
+                                div().col-sm-12
+                                    p {{solicitud.agencia.nombre}}
+                        td
+                            div().row
+                                fieldset(disabled)
+                                    div(v-if="solicitud.estado=='aceptada'").col-sm-6
+                                        button(type="button" ).btn.btn-success Aceptada
+                                    div(v-else).col-sm-6
+                                        button(type="button" ).btn.btn-danger Cerrada
+                                div().col-sm-6
+                                    button(type="button" class="" data-toggle="modal" v-bind:data-target="'#modal-detalle-hsc'+solicitud.id").btn.btn-primary Detalles
+                                    div(v-bind:id="'modal-detalle-hsc'+solicitud.id" tabindex="-1" role="dialog" aria-labelledby="myExtraLargeModalLabel" aria-hidden="true").modal.fade
+                                        div(class="" role="document").modal-dialog.modal-lg.modal-dialog-scrollable
+                                            div().modal-content
+                                                div().modal-header
+                                                    h5(id="exampleModalLabel").modal-title Detalle Solicitud
+                                                    button(type="button" data-dismiss="modal" aria-label="Close").close
+                                                        span(aria-hidden="true") &times;
+                                                div().modal-body
+                                                    fieldset(disabled)
+                                                        div().form-row
+                                                            div().form-group.col-sm-12
+                                                                label(  for="exampleFormControlTextarea1") Asunto
+                                                                input(v-bind:value="solicitud.asunto").form-control
+                                                        div().form-row
+                                                            div().form-group.col-sm-6
+                                                                label(for="exampleFormControlTextarea1") Categoria
+                                                                input(v-bind:value="solicitud.modulo.categoria").form-control
+                                                            div().form-group.col-sm-6
+                                                                label(for="exampleFormControlTextarea1") Modulo
+                                                                input(v-bind:value="solicitud.modulo.modulo").form-control
+                                                        div().form-row
+                                                            div().form-group.col-sm-4
+                                                                label(for="exampleFormControlTextarea1") No. Cita
+                                                                input(v-bind:value="solicitud.noCita").form-control
+                                                            div().form-group.col-sm-4
+                                                                label(for="exampleFormControlTextarea1") No. Orden
+                                                                input(v-bind:value="solicitud.noOrden").form-control
+                                                            div().form-group.col-sm-4
+                                                                label(for="exampleFormControlTextarea1") No. Placas
+                                                                input(v-bind:value="solicitud.noPlacas").form-control
+                                                        div().form-row
+                                                            div().form-group.col-sm-12
+                                                                label(for="exampleFormControlTextarea1") Email Contacto
+                                                                input(v-bind:value="solicitud.email").form-control
+                                                        div().form-row
+                                                            div().form-group.col-sm-12
+                                                                label(for="exampleFormControlTextarea1") Descripción
+                                                                textarea(v-bind:value="solicitud.descripcion" rows="4").form-control
+                                                        div().form-row
+                                                            div().form-group.col-sm-12
+                                                                label(for="exampleFormControlTextarea1") Evidencias
+                                                                textarea(v-bind:value="solicitud.evidencia" rows="4").form-control
+                                                div().modal-footer
+                        td 
+                            div().row
+                                div().col-sm-12
+                                    p {{solicitud.fecha}}
   
 </template>
 
@@ -21,7 +86,7 @@ export default {
             {
                 id:1,
                 asunto:"asunto 1",
-                estado: "abierta",
+                estado: "cerrada",
                 agencia:{
                     nombre:"agencia 1",
                      contacto:[
@@ -52,7 +117,7 @@ export default {
             },{
                 id:2,
                 asunto:"asunto 2",
-                estado: "abierta",
+                estado: "aceptada",
                 agencia:{
                     nombre:"agencia 2",
                     contacto:[
