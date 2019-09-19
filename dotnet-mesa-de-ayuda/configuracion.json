@@ -1,0 +1,6 @@
+{
+  "api": "http://capnet2.ddns.net:3101/",
+  "connections": {
+    "capnet": "Server=capnet2.ddns.net;Database=capnet_ci_cd;User Id=capnet;Password=capnet;"
+  }
+}

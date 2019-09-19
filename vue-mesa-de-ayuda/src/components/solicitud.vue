@@ -5,120 +5,118 @@
         div(class="col-sm12")
             form(v-on:submit.prevent="sendSolicitud()")
                 div(class="form-row")
-                    div( class="form-group col-sm-12") Asunto
-                      input( v-model="form.asunto" type="test" class="form-control" placeholder="Asunto")
-                    div(class="form-group col-sm-6")
-                        label(for="exampleFormControlSelect1") Categoria
-                        select( v-model="form.categoria"   id="exampleFormControlSelect1").form-control
-                          option(v-for="cat in categoria" v-bind:value="cat") {{cat}}
-                    div(class="form-group col-sm-6")
-                        label(for="exampleFormControlSelect1") Módulo
-                        select( v-model="form.modulo" ).form-control
-                          option(v-for="mod in modulo" v-bind:value="mod") {{mod}}
-                div(class="form-group")
-                    label(  for="exampleFormControlTextarea1") Descripcion
-                    textarea( placeholder="Descripción..." v-model="form.descripcion" class="form-control" id="exampleFormControlTextarea1" rows="4")
-                div(class="form-group")
-                    div(class="col-sm-9")
+                  div( class="form-group col-sm-12") Asunto
+                    input( v-model="form.asunto" type="test" class="form-control" placeholder="Asunto" required)
+                div(class="form-row")
+                  div( class="form-group col-sm-4") No. Orden
+                    input( v-model="form.no_orden" type="test" class="form-control" placeholder="12345" )
+                  div( class="form-group col-sm-4") No. Cita
+                    input( v-model="form.no_cita" type="test" class="form-control" placeholder="12345" )
+                  div( class="form-group col-sm-4") No. Placas
+                    input( v-model="form.no_placas" type="test" class="form-control" placeholder="HFG1234" )
+                div(class="form-row")
+                  div(class="form-group col-sm-6")
+                    label() Categoria
+                    select( v-model="categoria"  required).form-control
+                      option(v-for="cat in categorias" v-bind:value="cat") {{cat}}
+                  div(class="form-group col-sm-6")
+                    label() Módulo
+                    select( v-model="form.id_modulo" required).form-control
+                      option(v-for="mod in modulosFiltrados" v-bind:value="mod.id") {{mod.modulo}}
+                div(class="form-row")
+                  div(class="form-group col-sm-12")
+                    label() Descripcion
+                    textarea( placeholder="Descripción..." v-model="form.descripcion" class="form-control"  rows="4" required)
+                div(class="form-row")
+                  div(class="form-group col-sm-12")
                       div(class="custom-file")
-                        input(type="file" multiple data-show-upload="true" data-show-caption="true" @change="onFileSelected($event.target)" class="custom-file-input" id="inputGroupFile04" aria-describedby="Examinar") 
+                        input(type="file" multiple data-show-upload="true" data-show-caption="true" @change="onFileSelected($event.target)" class="custom-file-input" aria-describedby="Examinar") 
                         label(class="custom-file-label" for="inputGroupFile04") Escoge tus imagenes
-                            //input(id="input-2"  type="file" class="file" multiple data-show-upload="true" data-show-caption="true")
-                    ul
-                      div(class="col-sm-3")
-                        li(v-for="evidencia in evidencias") 
-                          img(v-bind:src="dataURL(evidencia)" class="align-self-start mr-3") 
-                          a( href="#" v-on:click="deleteEvidencia(evidencia)" class="btn btn-danger btn-sm") Eliminar
-                div(class="form-group")
-                    button(type="submit" class="col-sm-1 offset-sm-5 btn btn-primary") Enviar
-                    
+                              //input(id="input-2"  type="file" class="file" multiple data-show-upload="true" data-show-caption="true")
+                div(class="form-row")
+                  div(class="form-group col-sm-6")
+                    ul                    
+                      li(v-for="evidencia in evidencias") 
+                        img(v-bind:src="dataURL(evidencia)" class="align-self-start mr-3") 
+                        a( href="#" v-on:click="deleteEvidencia(evidencia)" class="btn btn-danger btn-sm") Eliminar
+                div(class="form-row")
+                  div(class="form-group offset-sm-5")
+                    button(type="submit" class="btn btn-primary") Enviar
+                      
 </template>
 
 <script>
 export default {
   data() {
     return {
-        dataResponse:{
-        agencia: "Mazda Fulanito",
-        modulos: [
-          {
-            categoria: "Tableros",
-            modulo: "Citas"
-          },
-          {
-            categoria: "Tableros",
-            modulo: "Asesor"
-          },
-          {
-            categoria: "SSL",
-            modulo: "Asesor"
-          },
-          {
-            categoria: "SSL",
-            modulo: "Técnico"
-          }
-        ]
-      },
-      categoria:["Tableros","CRM","SSL","Citas","OAS"],
-      modulo:["KPIS","Modulo de citas","Recepcion","Filtros","Correos"],
-      evidencias:[],
-      form: { 
-        asunto:"",
-        categoria:"",
-        modulo:"",
-        email:"",
-        descripcion:"",
-        evidencias:[]
+      data_response: {},
+      categoria: "",
+      modulo: "",
+      categorias:[],     
+      modulos:[],
+      evidencias: [],
+      form: {
+        id_agencia: 0,
+        id_modulo: 0,
+        no_orden:"",
+        no_cita:"",
+        no_placas:"",
+        asunto: "",
+        email: "",
+        descripcion: "",
+        evidencias: []
       }
     };
   },
   computed: {
-    modulosFiltrados(){
-      return "";
+    modulosFiltrados() {
+        
+      return this.modulos.filter(modulos => modulos.categoria==this.categoria);
     }
   },
   methods: {
-    sendSolicitud(){
-      var formData = new FormData(); 
-      
-      for(let element  in this.form){
-        if(element=="evidencias"){
-            for(let value of this.form[element])
-              formData.append(element,value)
-        }else{
-          formData.append(element,this.form[element]);
+    sendSolicitud() {
+      var formData = new FormData();
+
+      for (let element in this.form) {
+        if (element == "evidencias") {
+          for (let value of this.form[element]) formData.append(element, value);
+        } else {
+          formData.append(element, this.form[element]);
         }
-        
       }
       
-      // Display the key/value pairs
+      //Display the key/value pairs
       // for (var pair of formData.entries()) {
-      //     console.log(pair[0]+ ', ' + pair[1]); 
+      //     console.log(pair[0]+ ', ' + pair[1]);
       // }
-      this.$http.post('https://localhost:5001/api/redmine/crearPeticion', formData, {
+      this.$http
+        .post("api/redmine/crearSolicitud", formData, {
           headers: {
-            'Access-Control-Allow-Origin': '*',
-            'Content-Type': 'multipart/form-data'
-            }}).then(response => {                  
-            alert(response);
-      });
-      
-      this.form.evidencias=[];
-      this.form.asunto="";
-      this.form.email="";
-      this.form.categoria="";
-      this.form.modulo="";
-      this.form.descripcion="";
-      this.evidencias=[];
-      
-    },
-    deleteEvidencia(evidencia){
-      this.evidencias.splice(this.evidencias.indexOf(evidencia),1);
-      this.form.evidencias.splice(this.form.evidencias.indexOf(evidencia),1);
+            "Content-Type": "multipart/form-data"
+          }
+        })
+        .then(response => {
+          console.log(response);
+        });
 
+      this.form.evidencias = [];
+      this.form.asunto = "";
+      this.form.email = "";
+      this.form.no_placas="";
+      this.form.no_cita="";
+      this.form.no_orden="";
+      this.categoria = "";
+      this.modulo = "";
+      this.form.descripcion = "";
+      this.evidencias = [];
+    },
+    deleteEvidencia(evidencia) {
+      this.evidencias.splice(this.evidencias.indexOf(evidencia), 1);
+      this.form.evidencias.splice(this.form.evidencias.indexOf(evidencia), 1);
     },
     dataURL(file) {
-      return URL.createObjectURL(file);// el problema es que llega al return antes de que termine o se procese el onloadend
+      return URL.createObjectURL(file); // el problema es que llega al return antes de que termine o se procese el onloadend
     },
     onFileSelected(input) {
       var i = 0;
@@ -147,12 +145,41 @@ export default {
       
       */
     }
+  },
+  mounted() {
+    this.$http
+      .get("api/redmine/inicializacion?guid=" + this.$route.params.guid)
+      .then(response => {
+        let data = response.body;
+        if(data.modulos==null){
+          alert("Su liga es incorrecta, por favor intente acceder desde tableros");
+        }
+        else{
+          this.form.id_agencia=data.id_agencia;
+          this.modulos=data.modulos;
+          for(let mod of data.modulos){
+            if (this.categorias.indexOf(mod.categoria)==-1){
+                this.categorias.push(mod.categoria);
+            }
+          }
+              
+        }
+        
+        /* 
+      {
+        id_agencia: 2,
+        modulos: [{
+          ...
+        }]
+      }
+      */
+      });
   }
 };
 </script>
 
 <style  scoped>
-img{
+img {
   width: 70px;
   height: 70px;
 }

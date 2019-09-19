@@ -73,7 +73,7 @@
                                                                 textarea(v-bind:value="solicitud.evidencia" rows="4").form-control
                                                 div().modal-footer
                                                     button(type="button" ).btn.btn-success Aceptar
-                                                    button(type="button"  data-toggle="modal" v-bind:data-target="'#modal-cerrar-'+solicitud.id").btn.btn-danger Cerrar
+                                                    button(type="button"  data-toggle="modal" v-bind:data-target="'#modal-cerrar-lsc'+solicitud.id").btn.btn-danger Cerrar
                                 div().col-sm-12
                                     button(type="button" class="" ).btn.btn-success Aceptar                              
                                 div().col-sm-12

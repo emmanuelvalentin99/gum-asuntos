@@ -6,77 +6,183 @@ using Microsoft.AspNetCore.Mvc;
 using Newtonsoft.Json.Linq;
 using System.Dynamic;
 using System.Net.Http;
-using System.Net.Http.Headers;
-using System.Threading.Tasks;
+using System.IO;
 using Microsoft.AspNetCore.Http;
 using System.Text;
 using Microsoft.AspNetCore.Cors;
-namespace Nueva_carpeta.Controllers
+
+namespace dotnet_mesa_de_ayuda.Controllers
 {
-    [Route("api/redmine")]
-    [ApiController]
-    public class RedmineController : ControllerBase
+  [Route("api/redmine")]
+  [ApiController]
+  public class RedmineController : ControllerBase
+  {
+    [HttpGet("inicializacion")]
+    public async Task<object> GetInicializacion([FromQuery] string guid)
     {
-        // GET api/values
-        [HttpGet]
-        public ActionResult<IEnumerable<string>> Get()
+      guid = guid.ToLower();
+      var client = new HttpClient();
+      var request = new HttpRequestMessage(HttpMethod.Get, (string)Miscelanea.Configuracion.Get.api + "custom_fields.json");
+      request.Headers.Add("Authorization", "Basic YWRtaW46YW51bHZlaGU=");
+      var respuesta = await client.SendAsync(request);
+      dynamic payloadRespuesta = JObject.Parse(await respuesta.Content.ReadAsStringAsync()).ToObject(typeof(ExpandoObject));
+      var concesionarios = ((List<dynamic>)((List<dynamic>)payloadRespuesta.custom_fields)
+        .Find(elem => elem.name == "Agencia").possible_values)
+        .FindAll(elem => Miscelanea.Util.StringToSha1(elem.value).ToLower().StartsWith(guid))
+        .Select(elem => (string)elem.value)
+        .ToList();
+      if (concesionarios.Count != 1)
+      {
+        return new
         {
-            return new string[] { "value1", "value2" };
-        }
-
-        // GET api/values/5
-        [HttpGet("{id}")]
-        public ActionResult<string> Get(int id)
-        {
-            return "value";
-        }
-        
-        public class crearPeticionModel{
-            
-            
-            public string asunto{get;set;}
-            public string categoria{get;set;}
-            public string modulo{get;set;}
-            public string descripcion{get;set;}
-            public List<IFormFile> evidencias{get;set;}
-            
-        }
-
-        // POST api/values
-        [EnableCors("AllowOrigin")]
-        [HttpPost("crearPeticion")]
-        public async Task<object> crearPeticion([FromForm] crearPeticionModel payloadJO)
-        {
-            
-            var client = new HttpClient();
-            var byteArray = Encoding.ASCII.GetBytes("emmanuel:22.05.97E");
-            var request = new HttpRequestMessage(HttpMethod.Post, "http://capnet2.ddns.net:3101/issues.json");
-            request.Headers.Add("Authorization", "Basic " + Convert.ToBase64String(byteArray));// recuerda convertir esto a base 64, no sé si escrib
-            var body = JObject.FromObject(new
-            {
-                issue = new
-                {
-                    project_id = 1,
-                    subject = payloadJO.asunto,
-                    description = payloadJO.descripcion
-                }
-            }).ToString();
-            request.Content = new StringContent(body, Encoding.UTF8, "application/json");
-            var respuesta = await client.SendAsync(request);
-            dynamic payloadRespuesta = JObject.Parse(await respuesta.Content.ReadAsStringAsync()).ToObject(typeof(ExpandoObject));
-            return "La petición ha sido creada con el ID de redmine " + payloadRespuesta.issue.id.ToString();
-        }
-
-        // PUT api/values/5
-        [HttpPut("{id}")]
-        public void Put(int id, [FromBody] string value)
-        {
-        }
-
-        // DELETE api/values/5
-        [HttpDelete("{id}")]
-        public void Delete(int id)
-        {
-        }
+          id_agencia = 0,
+          modulos = (object)null
+        };
+      }
+      var qb = new QueryBuilder.QueryBuilder((string)Miscelanea.Configuracion.Get.connections.capnet);
+      var ids = qb.Table("ma.concesionarios")
+        .Where("nombre", concesionarios[0])
+        .Select("id")
+        .ExecuteListDynamic();
+      if (ids.Count != 1) return new
+      {
+        id_agencia = 0,
+        modulos = (object)null
+      };
+      return new
+      {
+        id_agencia = ids[0].id,
+        modulos = qb.Table("ma.modulos")
+          .Select("id", "categoria", "modulo")
+          .ExecuteListDynamic()
+      };
     }
+
+    [HttpGet("validar-token")]
+    public async Task<object> GetValidarToken([FromQuery] string token)
+    {
+      var client = new HttpClient();
+      var request = new HttpRequestMessage(HttpMethod.Get, (string)Miscelanea.Configuracion.Get.api + "issues.json?limit=1");
+      request.Headers.Add("Authorization", "Basic " + token);
+      var respuesta = await client.SendAsync(request);
+      if (respuesta.StatusCode == System.Net.HttpStatusCode.Unauthorized) return false;
+      return true;
+    }
+
+    public class CrearSolicitudModel
+    {
+      public float id_agencia { get; set; }
+      public float id_modulo { get; set; }
+      public string asunto { get; set; }
+      public string descripcion { get; set; }
+      public string no_orden { get; set; }
+      public string no_cita { get; set; }
+      public string no_placas { get; set; }
+      public string email { get; set; }
+      public List<IFormFile> evidencias { get; set; }
+    }
+
+    [HttpPost("crearSolicitud")]
+    public object CrearSolicitud([FromForm] CrearSolicitudModel payload)
+    {
+      var qb = new QueryBuilder.QueryBuilder((string)Miscelanea.Configuracion.Get.connections.capnet);
+      qb.Transaction(trx =>
+      {
+        var id = trx.Table("ma.solicitudes")
+          .Insert(new
+          {
+            payload.id_agencia,
+            payload.id_modulo,
+            payload.asunto,
+            payload.descripcion,
+            payload.no_cita,
+            payload.no_orden,
+            payload.no_placas,
+            fecha_registro = trx.Raw("getutcdate()"),
+            fecha_actualizacion = trx.Raw("getutcdate()"),
+            estado = "abierta"
+          }, new string[] { "inserted.id" })
+          .ExecuteListDynamic()[0].id;
+        if (payload.evidencias != null)
+        {
+          if (!Directory.Exists("wwwroot/img/" + DateTime.UtcNow.ToString("yyyy-MM-dd")))
+            Directory.CreateDirectory("wwwroot/img/" + DateTime.UtcNow.ToString("yyyy-MM-dd"));
+          foreach (var elem in payload.evidencias)
+          {
+            var archivo = DateTime.UtcNow.ToString("yyyy-MM-dd") + "/" + Guid.NewGuid().ToString("N") + "." + HeyRed.Mime.MimeTypesMap.GetExtension(elem.ContentType);
+            using (var fs = new FileStream("wwwroot/img/" + archivo, FileMode.Create))
+              elem.CopyTo(fs);
+            trx.Table("ma.evidencias")
+              .Insert(new
+              {
+                id_solicitud = id,
+                ruta = archivo
+              })
+              .Execute();
+          }
+        }
+      });
+      return null;
+    }
+
+    public async Task<object> crearPeticion([FromForm] CrearSolicitudModel payloadJO)
+    {
+
+      var client = new HttpClient();
+      var byteArray = Encoding.ASCII.GetBytes("emmanuel:22.05.97E");
+      var request = new HttpRequestMessage(HttpMethod.Post, "http://capnet2.ddns.net:3101/issues.json");
+      request.Headers.Add("Authorization", "Basic YWRtaW46YW51bHZlaGU=");
+      var body = JObject.FromObject(new
+      {
+        issue = new
+        {
+          project_id = 1,
+          subject = payloadJO.asunto,
+          description = payloadJO.descripcion
+        }
+      }).ToString();
+      request.Content = new StringContent(body, Encoding.UTF8, "application/json");
+      var respuesta = await client.SendAsync(request);
+      dynamic payloadRespuesta = JObject.Parse(await respuesta.Content.ReadAsStringAsync()).ToObject(typeof(ExpandoObject));
+      return "La petición ha sido creada con el ID de redmine " + payloadRespuesta.issue.id.ToString();
+    }
+
+    [HttpGet("solicitudes-pendientes")]
+    public object GetSolicitudesPendientes()
+    {
+      var qb = new QueryBuilder.QueryBuilder((string)Miscelanea.Configuracion.Get.connections.capnet);
+      var solicitudes = qb.Table("ma.solicitudes as s")
+        .Join("ma.concesionarios as c", "s.id_agencia", "c.id")
+        .Join("ma.modulos as m", "s.id_modulo", "m.id")
+        .Select("s.id",
+          "s.asunto",
+          "s.estado",
+          "s.id_agencia",
+          "c.nombre as nombre_agencia",
+          "m.id as id_modulo",
+          "m.categoria as nombre_categoria",
+          "m.modulo as nombre_modulo",
+          "s.descripcion",
+          "s.email",
+          "s.fecha_registro",
+          "s.no_orden",
+          "s.no_placas",
+          "s.no_cita")
+        .Where("s.estado", "abierta")
+        .ExecuteListDynamic();
+      foreach (var solicitud in solicitudes)
+      {
+        var ds = (IDictionary<string, object>)solicitud;
+        ds["contactos"] = qb.Table("ma.concesionarios_contactos")
+          .Where("id_concesionario", ds["id_agencia"])
+          .Select("rv", "nombre", "cargo", "telefono", "email")
+          .ExecuteListDynamic();
+        ds["evidencias"] = qb.Table("ma.evidencias")
+          .Where("id_solicitud", ds["id"])
+          .Select("id", "ruta")
+          .ExecuteListDynamic();
+      }
+      return solicitudes;
+    }
+  }
 }
