@@ -5,6 +5,7 @@
     solicitud()
     listaSolicitudesConsultor()
     historialSolicitudesConsultor()
+    historialSolicitudesAgencia()
 </template>
 
 <script>
@@ -12,6 +13,7 @@ import HelloWorld from './components/HelloWorld.vue'
 import solicitud from './components/solicitud.vue'
 import listaSolicitudesConsultor from './components/listaSolicitudesConsultor.vue'
 import historialSolicitudesConsultor from './components/historialSolicitudesConsultor.vue'
+import historialSolicitudesAgencia from './components/historialSolicitudesAgencia.vue'
 
 export default {
   name: 'app',
@@ -19,7 +21,8 @@ export default {
     HelloWorld,
     solicitud,
     listaSolicitudesConsultor,
-    historialSolicitudesConsultor
+    historialSolicitudesConsultor,
+    historialSolicitudesAgencia
   }
 }
 </script>
