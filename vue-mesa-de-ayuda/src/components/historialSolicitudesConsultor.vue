@@ -159,10 +159,11 @@ export default {
   },
   mounted() {
     // this.$store.commit("isLoaderShown", true); // Esta cosa hace que se muestre el "Cargando..."
-    // this.$http.get("api/redmine/solicitudes-pendientes").then(respuesta => 
-    // {
-    //   this.solicitudes = respuesta.body
-    // })
+    this.$http.get("api/redmine/solicitudes-pendientes").then(respuesta => 
+     {
+       this.solicitudes = respuesta.body
+       //console.log(this.solicitudes);
+     });
     // this.$store.commit("isLoaderShown", false);
   }
 };

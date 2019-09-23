@@ -17,6 +17,40 @@ namespace dotnet_mesa_de_ayuda.Controllers
   [ApiController]
   public class RedmineController : ControllerBase
   {
+    private QueryBuilder.QueryBuilder _DB;
+    private QueryBuilder.QueryBuilder db
+    {
+      get
+      {
+        if (_DB == null) _DB = new QueryBuilder.QueryBuilder((string)Miscelanea.Configuracion.Get.connections.capnet);
+        return _DB;
+      }
+    }
+
+    private void EnviarEmail(long id_solicitud, string plantilla, bool externo = true)
+    {
+      var data = db.Table("ma.solicitudes as s")
+        .LeftJoin("ma.concesionarios as c", "s.id_agencia", "c.id")
+        .Select("s.*", "c.nombre as nombre_concesionario")
+        .Where("s.id", id_solicitud)
+        .ExecuteListDynamic()[0];
+      plantilla = Miscelanea.Util.ReplaceObject(plantilla, data);
+      var correos = new List<string>();
+      if (externo && data.email != null) correos.Add((string)data.email);
+      correos.AddRange(db.Table("ma.concesionarios_contactos")
+        .Select("email")
+        .Where("externo", externo)
+        .ExecuteListDynamic().Select(elem => (string)elem.email));
+      if (correos.Count == 0) 
+        return;
+        // throw new ArgumentException("El concesionario relacionado a la solicitud, no tiene correos electrónicos de contacto.", "id_solicitud");
+      var conf = new Miscelanea.Util.CorreoConfig {
+        MensajeTo = correos.Take(1),
+        MensajeCC = correos.Skip(1),
+      };
+
+    }
+
     [HttpGet("inicializacion")]
     public async Task<object> GetInicializacion([FromQuery] string guid)
     {
@@ -86,9 +120,10 @@ namespace dotnet_mesa_de_ayuda.Controllers
     public object CrearSolicitud([FromForm] CrearSolicitudModel payload)
     {
       var qb = new QueryBuilder.QueryBuilder((string)Miscelanea.Configuracion.Get.connections.capnet);
+      int id = 0;
       qb.Transaction(trx =>
       {
-        var id = trx.Table("ma.solicitudes")
+        id = trx.Table("ma.solicitudes")
           .Insert(new
           {
             payload.id_agencia,
@@ -122,6 +157,7 @@ namespace dotnet_mesa_de_ayuda.Controllers
           }
         }
       });
+      EnviarEmail(id, Miscelanea.Configuracion.Get.plantillasCorreo.registroSolicitud, true);
       return null;
     }
 
@@ -182,7 +218,43 @@ namespace dotnet_mesa_de_ayuda.Controllers
           .Select("id", "ruta")
           .ExecuteListDynamic();
       }
-      return solicitudes;
+      return new
+      {
+        solicitudes,
+        motivosCierre = db.Table("ma.motivos_cierre")
+          .Select("id", "descripcion")
+          .ExecuteDataTable()
+      };
+    }
+
+    [HttpPost("cerrar-solicitud")]
+    public object CerrarSolicitud([FromBody] JObject payloadJO)
+    {
+      dynamic payload = payloadJO.ToObject(typeof(ExpandoObject));
+      var motivos_cierre = db.Table("ma.motivos_cierre")
+        .Select("descripcion")
+        .Where("id", (object)payload.id_motivo_cierre)
+        .ExecuteListDynamic();
+      if (motivos_cierre.Count != 1) throw new ArgumentException("El valor del argumento no es correcto.", "payloadJO.id_motivo_cierre");
+      db.Table("ma.solicitudes")
+        .Update(new
+        {
+          motivo_cierre = motivos_cierre[0].descripcion,
+          detalle_cierre = payload.detalle_cierre,
+          estado = "cerrada"
+        })
+        .Where("id", (object)payload.id_solicitud)
+        .Execute();
+      // WIP: Enviar correo
+      return null;
+    }
+
+    [HttpPost("aceptar-solicitud")]
+    public object AceptarSolicitud([FromBody] JObject payloadJO)
+    {
+      dynamic payload = payloadJO.ToObject(typeof(ExpandoObject));
+
+      return null;
     }
   }
 }

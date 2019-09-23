@@ -1,47 +1,54 @@
 <template lang="pug">
     div(class="container")
+        div(v-if="liga_incorrecta").row.col-sm-12
+          div(role="alert").alert.alert-danger.alert-dismissible.fade.show
+            strong Liga no configurada!
+            p Verifica tu enlace o intenta acceder desde Tableros.
+            button(data-dismiss="alert" type="button"  aria-label="Close" disabled).close
+              span(aria-hidden="true") &times;
         div().row.col-sm-1.offset-sm-11
             a(href="#" ).btn.btn-dark Atrás
         div(class="col-sm12")
-            form(v-on:submit.prevent="sendSolicitud()")
-                div(class="form-row")
-                  div( class="form-group col-sm-12") Asunto
-                    input( v-model="form.asunto" type="test" class="form-control" placeholder="Asunto" required)
-                div(class="form-row")
-                  div( class="form-group col-sm-4") No. Orden
-                    input( v-model="form.no_orden" type="test" class="form-control" placeholder="12345" )
-                  div( class="form-group col-sm-4") No. Cita
-                    input( v-model="form.no_cita" type="test" class="form-control" placeholder="12345" )
-                  div( class="form-group col-sm-4") No. Placas
-                    input( v-model="form.no_placas" type="test" class="form-control" placeholder="HFG1234" )
-                div(class="form-row")
-                  div(class="form-group col-sm-6")
-                    label() Categoria
-                    select( v-model="categoria"  required).form-control
-                      option(v-for="cat in categorias" v-bind:value="cat") {{cat}}
-                  div(class="form-group col-sm-6")
-                    label() Módulo
-                    select( v-model="form.id_modulo" required).form-control
-                      option(v-for="mod in modulosFiltrados" v-bind:value="mod.id") {{mod.modulo}}
-                div(class="form-row")
-                  div(class="form-group col-sm-12")
-                    label() Descripcion
-                    textarea( placeholder="Descripción..." v-model="form.descripcion" class="form-control"  rows="4" required)
-                div(class="form-row")
-                  div(class="form-group col-sm-12")
-                      div(class="custom-file")
-                        input(type="file" multiple data-show-upload="true" data-show-caption="true" @change="onFileSelected($event.target)" class="custom-file-input" aria-describedby="Examinar") 
-                        label(class="custom-file-label" for="inputGroupFile04") Escoge tus imagenes
-                              //input(id="input-2"  type="file" class="file" multiple data-show-upload="true" data-show-caption="true")
-                div(class="form-row")
-                  div(class="form-group col-sm-6")
-                    ul                    
-                      li(v-for="evidencia in evidencias") 
-                        img(v-bind:src="dataURL(evidencia)" class="align-self-start mr-3") 
-                        a( href="#" v-on:click="deleteEvidencia(evidencia)" class="btn btn-danger btn-sm") Eliminar
-                div(class="form-row")
-                  div(class="form-group offset-sm-5")
-                    button(type="submit" class="btn btn-primary") Enviar
+            fieldset(v-bind:disabled="liga_incorrecta")
+              form(v-on:submit.prevent="sendSolicitud()")
+                  div(class="form-row")
+                    div( class="form-group col-sm-12") Asunto
+                      input( v-model="form.asunto" type="test" class="form-control" placeholder="Asunto" required)
+                  div(class="form-row")
+                    div( class="form-group col-sm-4") No. Orden
+                      input( v-model="form.no_orden" type="test" class="form-control" placeholder="12345" )
+                    div( class="form-group col-sm-4") No. Cita
+                      input( v-model="form.no_cita" type="test" class="form-control" placeholder="12345" )
+                    div( class="form-group col-sm-4") No. Placas
+                      input( v-model="form.no_placas" type="test" class="form-control" placeholder="HFG1234" )
+                  div(class="form-row")
+                    div(class="form-group col-sm-6")
+                      label() Categoria
+                      select( v-model="categoria"  required).form-control
+                        option(v-for="cat in categorias" v-bind:value="cat") {{cat}}
+                    div(class="form-group col-sm-6")
+                      label() Módulo
+                      select( v-model="form.id_modulo" required).form-control
+                        option(v-for="mod in modulosFiltrados" v-bind:value="mod.id") {{mod.modulo}}
+                  div(class="form-row")
+                    div(class="form-group col-sm-12")
+                      label() Descripcion
+                      textarea( placeholder="Descripción..." v-model="form.descripcion" class="form-control"  rows="4" required)
+                  div(class="form-row")
+                    div(class="form-group col-sm-12")
+                        div(class="custom-file")
+                          input(type="file" multiple data-show-upload="true" data-show-caption="true" @change="onFileSelected($event.target)" class="custom-file-input" aria-describedby="Examinar") 
+                          label(class="custom-file-label" for="inputGroupFile04") Escoge tus imagenes
+                                //input(id="input-2"  type="file" class="file" multiple data-show-upload="true" data-show-caption="true")
+                  div(class="form-row")
+                    div(class="form-group col-sm-6")
+                      ul                    
+                        li(v-for="evidencia in evidencias") 
+                          img(v-bind:src="dataURL(evidencia)" class="align-self-start mr-3") 
+                          a( href="#" v-on:click="deleteEvidencia(evidencia)" class="btn btn-danger btn-sm") Eliminar
+                  div(class="form-row")
+                    div(class="form-group offset-sm-5")
+                      button(type="submit" class="btn btn-primary") Enviar
                       
 </template>
 
@@ -49,6 +56,7 @@
 export default {
   data() {
     return {
+      liga_incorrecta: false,
       data_response: {},
       categoria: "",
       modulo: "",
@@ -97,7 +105,10 @@ export default {
           }
         })
         .then(response => {
-          console.log(response);
+          //console.log(response);
+          alert(response);
+        }, response =>{
+            alert(response);
         });
 
       this.form.evidencias = [];
@@ -152,9 +163,10 @@ export default {
       .then(response => {
         let data = response.body;
         if(data.modulos==null){
-          alert("Su liga es incorrecta, por favor intente acceder desde tableros");
+          this.liga_incorrecta=true;
         }
         else{
+          this.liga_incorrecta=false;
           this.form.id_agencia=data.id_agencia;
           this.modulos=data.modulos;
           for(let mod of data.modulos){

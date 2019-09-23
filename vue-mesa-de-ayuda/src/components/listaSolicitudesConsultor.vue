@@ -3,7 +3,7 @@
         div().row.col-sm-1.offset-sm-11
             a(href="#" ).btn.btn-dark Atrás
         div().row
-            table().table.table-striped
+            table(id="listaSolicitudes").table.table-striped
                 thead().thead-dark
                     tr()
                         th(scope="col") #
@@ -12,7 +12,7 @@
                         th(scope="col") 
                         th(scope="col") Fecha Actualización
                 tbody()
-                    tr(v-for="solicitud in solicitudes" v-if="solicitud.estado=='abierta'")
+                    tr(v-for="(solicitud, indexSolicitud) in solicitudes" v-if="solicitud.estado=='abierta'")
                         td  
                             div().row
                                 div().col-sm-12
@@ -20,7 +20,7 @@
                         td  
                             div().row
                                 div().col-sm-12
-                                    p {{solicitud.agencia.nombre}}
+                                    p {{solicitud.nombre_agencia}}
                         td 
                             div().row
                                 div().col-sm-12
@@ -45,20 +45,20 @@
                                                         div().form-row
                                                             div().form-group.col-sm-6
                                                                 label(for="exampleFormControlTextarea1") Categoria
-                                                                input(v-bind:value="solicitud.modulo.categoria").form-control
+                                                                input(v-bind:value="solicitud.nombre_categoria").form-control
                                                             div().form-group.col-sm-6
                                                                 label(for="exampleFormControlTextarea1") Modulo
-                                                                input(v-bind:value="solicitud.modulo.modulo").form-control
+                                                                input(v-bind:value="solicitud.nombre_modulo").form-control 
                                                         div().form-row
                                                             div().form-group.col-sm-4
                                                                 label(for="exampleFormControlTextarea1") No. Cita
-                                                                input(v-bind:value="solicitud.noCita").form-control
+                                                                input(v-bind:value="solicitud.no_cita").form-control
                                                             div().form-group.col-sm-4
                                                                 label(for="exampleFormControlTextarea1") No. Orden
-                                                                input(v-bind:value="solicitud.noOrden").form-control
+                                                                input(v-bind:value="solicitud.no_orden").form-control
                                                             div().form-group.col-sm-4
                                                                 label(for="exampleFormControlTextarea1") No. Placas
-                                                                input(v-bind:value="solicitud.noPlacas").form-control
+                                                                input(v-bind:value="solicitud.no_placas").form-control
                                                         div().form-row
                                                             div().form-group.col-sm-12
                                                                 label(for="exampleFormControlTextarea1") Email Contacto
@@ -67,15 +67,28 @@
                                                             div().form-group.col-sm-12
                                                                 label(for="exampleFormControlTextarea1") Descripción
                                                                 textarea(v-bind:value="solicitud.descripcion" rows="4").form-control
-                                                        div().form-row
-                                                            div().form-group.col-sm-12
-                                                                label(for="exampleFormControlTextarea1") Evidencias
-                                                                textarea(v-bind:value="solicitud.evidencia" rows="4").form-control
+                                                        div.form-row
+                                                            div.form-group.col-sm-12
+                                                                div(:id="'carouselExampleIndicators'+solicitud.id" data-ride="carousel").carousel.slide
+                                                                    ol.carousel-indicators
+                                                                        li(v-for="(item, index) in solicitud.evidencias" v-bind:data-target="'#carouselExampleIndicators'+solicitud.id" v-bind:data-slide-to="index")
+                                                                    div.carousel-inner
+                                                                        template(v-for="(item, index) in solicitud.evidencias")
+                                                                            div(v-if="index==0").carousel-item.active
+                                                                                img(v-bind:src="'img/'+item.ruta" alt="First slide").d-block.w-100
+                                                                            div(v-else).carousel-item
+                                                                                img(v-bind:src="'img/'+item.ruta").d-block.w-100
+                                                                    a(:href="'#carouselExampleIndicators'+solicitud.id" role="button" data-slide="prev").carousel-control-prev
+                                                                        span(aria-hidden="true").carousel-control-prev-icon
+                                                                        span().sr-only Anterior
+                                                                    a(:href="'#carouselExampleIndicators'+solicitud.id" role="button" data-slide="next").carousel-control-next
+                                                                        span(aria-hidden="true").carousel-control-next-icon
+                                                                        span().sr-only Siguiente
                                                 div().modal-footer
-                                                    button(type="button" ).btn.btn-success Aceptar
-                                                    button(type="button"  data-toggle="modal" v-bind:data-target="'#modal-cerrar-lsc'+solicitud.id").btn.btn-danger Cerrar
+                                                    button(type="button" v-on:click="sendAceptar()" data-dismiss="modal").btn.btn-success Aceptar
+                                                    button(type="button"  data-toggle="modal" v-bind:data-target="'#modal-cerrar-lsc'+solicitud.id" data-dismiss="modal").btn.btn-danger Cerrar
                                 div().col-sm-12
-                                    button(type="button" class="" ).btn.btn-success Aceptar                              
+                                    button(type="button" v-on:click="sendAceptar()" class="" ).btn.btn-success Aceptar                              
                                 div().col-sm-12
                                     button(type="button" class="" data-toggle="modal" v-bind:data-target="'#modal-cerrar-lsc'+solicitud.id").btn.btn-danger Cerrar                  
                                     div(v-bind:id="'modal-cerrar-lsc'+solicitud.id" tabindex="-1" role="dialog" aria-labelledby="myExtraLargeModalLabel" aria-hidden="true").modal.fade
@@ -86,156 +99,128 @@
                                                     button(type="button" data-dismiss="modal" aria-label="Close").close
                                                         span(aria-hidden="true") &times;
                                                 div().modal-body
-                                                    div().form-row
-                                                        div().form-group.col-sm-12
-                                                            label(for="exampleFormControlSelect1") Módulo
-                                                            select( v-model="form.motivoCierre" ).form-control
-                                                                option(v-for="motivo in dataResponse" v-bind:value="motivo.id") {{motivo.motivoCierre}}
-                                                    div().form-row
-                                                        div().form-group.col-sm-12
-                                                            label(for="exampleFormControlTextarea1") Detalle de Cierre
-                                                            textarea( placeholder="Descripción..." v-model="form.detalleCierre" class="form-control" id="exampleFormControlTextarea1" rows="4")
-                                                div().modal-footer
-                                                    button(type="button"  data-dismiss="modal").btn.btn-danger Cerrar
+                                                    form(v-on:submit.prevent="sendCerrar(solicitud)")
+                                                        div().form-row
+                                                            div().form-group.col-sm-12
+                                                                label(for="exampleFormControlSelect1") Módulo
+                                                                select( v-model="json_cerrar.id_motivo_cierre" required).form-control
+                                                                    option(v-for="motivo in motivos_cierre" v-bind:value="motivo.id") {{motivo.descripcion}}
+                                                        div().form-row
+                                                            div().form-group.col-sm-12
+                                                                label(for="exampleFormControlTextarea1") Detalle de Cierre
+                                                                textarea( placeholder="Descripción..." v-model="json_cerrar.detalle_cierre" class="form-control" id="exampleFormControlTextarea1" rows="4" required)
+                                                        div().modal-footer
+                                                            button(type="submit").btn.btn-danger Cerrar
                         td 
                             div().row
                                 div().col-sm-12
-                                    p {{solicitud.fecha}}
+                                    p {{solicitud.fecha_registro}}
                               
     
 
 </template>
 
 <script>
-import $ from 'jquery'
+import $ from "jquery";
 export default {
-    data(){
-        return {
-            dataResponse:[
-                { id:1,
-                motivoCierre: "Duda de Operación"},
-                { id:2,
-                motivoCierre: "Error de Proceso"},
-                { id:3,
-                motivoCierre: "Duda de Proceso"}]
-                
-            ,
-            form: { 
-                motivoCierre:"",
-                detalleCierre:""
-            },
-            solicitudes:[
-            {
-                id:1,
-                asunto:"asunto 1",
-                estado: "abierta",
-                agencia:{
-                    nombre:"agencia 1",
-                     contacto:[
-                        {nombre: "contacto 1.1",
-                        cargo:"Gerente 1.1",
-                        email: "email.example1.1@algo.com",
-                        telefono: "55678907345"},
-                        {nombre: "contacto 1.2",
-                        cargo:"Gerente 1.2",
-                        email: "email.example1.2@algo.com",
-                        telefono: "55678907345"}
-                    ]
-                },
-                modulo:{
-                    id:1,
-                    categoria:"CRM",
-                    modulo: "Filtros"
-                },
-                descripcion:"1 Lorem ipsum dolor sit amet, consectetur adipiscing elit. Aliquam iaculis egestas ligula, id mattis sem vehicula ac. Quisque a mollis lorem. Cras dignissim in ante non tempus. Class aptent taciti sociosqu ad litora torquent per conubia nostra, per inceptos himenaeos. Nunc consequat tellus a lectus gravida lacinia. Nunc nulla leo, pulvinar vel ipsum at, efficitur varius nisi. Nullam rutrum urna in mi rhoncus, eu mattis lorem fringilla.",
-                email:"contacto1@general",
-                fecha:"20190917T04:14:11",
-                noOrden: "12345",
-                noPlacas:"12345",
-                noCita:"12345",
-                evidencia:[{
+  data() {
+    return {
+      json_cerrar: {
+        id_solicitud: 0,
+        id_motivo_cierre: 0,
+        detalle_cierre: ""
+      },
+      form_aceptar: {
+        id_agencia: 0,
+        id_modulo: 0,
+        no_orden: "",
+        no_cita: "",
+        no_placas: "",
+        asunto: "",
+        email: "",
+        descripcion: "",
+        evidencias: []
+      },
+      solicitudes: [],
+      motivos_cierre: [],
+      modal: ""
+    };
+  },
+  methods: {
+    sendCerrar(solicitud) {
+      $("#modal-cerrar-lsc" + solicitud.id).modal("hide");
+      this.json_cerrar.id_solicitud = solicitud.id;
+      this.$http
+        .post("api/redmine/cerrar-solicitud", this.json_cerrar, {
+          headers: {
+            "Access-Control-Allow-Origin": "*",
+            "Content-Type": "application/json"
+          }
+        })
+        .then(
+          response => {
+            alert(response);
+            this.solicitudes.splice(this.solicitudes.indexOf(solicitud), 1);
+            console.log(this.solicitudes);
+          },
+          response => {
+            alert(response);
+          }
+        );
 
-                }]
-            },{
-                id:2,
-                asunto:"asunto 2",
-                estado: "abierta",
-                agencia:{
-                    nombre:"agencia 2",
-                    contacto:[
-                        {nombre: "contacto 2.1",
-                        cargo:"Gerente 2.1",
-                        email: "email.example2.1@algo.com",
-                        telefono: "55678907345"},
-                        {nombre: "contacto 2.2",
-                        cargo:"Gerente 2.2",
-                        email: "email.example2.2@algo.com",
-                        telefono: "55678907345"}
-                    ]
-                    
-                },
-                modulo:{
-                    id:1,
-                    categoria:"Tableros",
-                    modulo: "Chips"
-                },
-                descripcion:"2 Lorem ipsum dolor sit amet, consectetur adipiscing elit. Aliquam iaculis egestas ligula, id mattis sem vehicula ac. Quisque a mollis lorem. Cras dignissim in ante non tempus. Class aptent taciti sociosqu ad litora torquent per conubia nostra, per inceptos himenaeos. Nunc consequat tellus a lectus gravida lacinia. Nunc nulla leo, pulvinar vel ipsum at, efficitur varius nisi. Nullam rutrum urna in mi rhoncus, eu mattis lorem fringilla.",
-                email:"contacto2@general",
-                fecha:"20190917T04:14:11",
-                noOrden: "54321",
-                noPlacas:"54321",
-                noCita:"54321",
-                evidencia:[{
+      this.json_cerrar.id_motivo_cierre = 0;
+      this.json_cerrar.detalle_cierre = "";
+    },
+    sendAceptar() {
+      var formData = new FormData();
 
-                }]
-            }]
-        };
-    },
-    methods:{
-        sendCierre(){
-                var formData = new FormData(); 
-                
-                for(let element  in this.form){
-                    if(element=="evidencias"){
-                        for(let value of this.form[element])
-                        formData.append(element,value)
-                    }else{
-                    formData.append(element,this.form[element]);
-                    }
-                    
-                }
-                
-                // Display the key/value pairs
-                // for (var pair of formData.entries()) {
-                //     console.log(pair[0]+ ', ' + pair[1]); 
-                // }
-                this.$http.post('https://localhost:5001/api/redmine/crearPeticion', formData, {
-                    headers: {
-                        'Access-Control-Allow-Origin': '*',
-                        'Content-Type': 'multipart/form-data'
-                        }}).then(response => {                  
-                        alert(response);
-                });
-                
-                this.form.evidencias=[];
-                this.form.asunto="";
-                this.form.email="";
-                this.form.categoria="";
-                this.form.modulo="";
-                this.form.descripcion="";
-                this.evidencias=[];
-                
-                }
-    },
-    computed:{
-        modalFunction(){
-            $("#modal1").modal('hide');
-            return"";
+      for (let element in this.form) {
+        if (element == "evidencias") {
+          for (let value of this.form[element]) formData.append(element, value);
+        } else {
+          formData.append(element, this.form[element]);
         }
+      }
+
+      //Display the key/value pairs
+      // for (var pair of formData.entries()) {
+      //     console.log(pair[0]+ ', ' + pair[1]);
+      // }
+      this.$http
+        .post("api/redmine/crearPeticion", formData, {
+          headers: {
+            "Access-Control-Allow-Origin": "*",
+            "Content-Type": "multipart/form-data"
+          }
+        })
+        .then(response => {
+          alert(response);
+        });
+
+      this.form.evidencias = [];
+      this.form.asunto = "";
+      this.form.email = "";
+      this.form.categoria = "";
+      this.form.modulo = "";
+      this.form.descripcion = "";
+      this.evidencias = [];
     }
-}
+  },
+  computed: {
+    modalFunction() {
+      $("#modal1").modal("hide");
+      return "";
+    }
+  },
+  mounted() {
+    this.$http.get("api/redmine/solicitudes-pendientes").then(respuesta => {
+      this.solicitudes = respuesta.body.solicitudes;
+      this.motivos_cierre = respuesta.body.motivosCierre;
+      //console.log(this.solicitudes);
+    });
+  }
+};
 </script>
 
 <style>
-
 </style>
