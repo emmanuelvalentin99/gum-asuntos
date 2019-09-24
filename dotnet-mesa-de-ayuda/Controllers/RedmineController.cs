@@ -9,7 +9,6 @@ using System.Net.Http;
 using System.IO;
 using Microsoft.AspNetCore.Http;
 using System.Text;
-using Microsoft.AspNetCore.Cors;
 
 namespace dotnet_mesa_de_ayuda.Controllers
 {
@@ -27,7 +26,7 @@ namespace dotnet_mesa_de_ayuda.Controllers
       }
     }
 
-    private void EnviarEmail(long id_solicitud, string plantilla, bool externo = true)
+    private void EnviarEmail(long id_solicitud, string asunto, string plantilla, bool externo = true)
     {
       var data = db.Table("ma.solicitudes as s")
         .LeftJoin("ma.concesionarios as c", "s.id_agencia", "c.id")
@@ -41,14 +40,24 @@ namespace dotnet_mesa_de_ayuda.Controllers
         .Select("email")
         .Where("externo", externo)
         .ExecuteListDynamic().Select(elem => (string)elem.email));
-      if (correos.Count == 0) 
+      if (correos.Count == 0)
         return;
-        // throw new ArgumentException("El concesionario relacionado a la solicitud, no tiene correos electrónicos de contacto.", "id_solicitud");
-      var conf = new Miscelanea.Util.CorreoConfig {
+      // throw new ArgumentException("El concesionario relacionado a la solicitud, no tiene correos electrónicos de contacto.", "id_solicitud");
+      var conf = new Miscelanea.Util.CorreoConfig
+      {
         MensajeTo = correos.Take(1),
         MensajeCC = correos.Skip(1),
+        MensajeFromAddress = Miscelanea.Configuracion.Get.email.from.address,
+        MensajeFromName = Miscelanea.Configuracion.Get.email.from.name,
+        MensajeHtml = plantilla,
+        MensajeSubject = asunto,
+        TransporterAuthPass = Miscelanea.Configuracion.Get.email.transporter.auth.pass,
+        TransporterAuthUser = Miscelanea.Configuracion.Get.email.transporter.auth.user,
+        TransporterHost = Miscelanea.Configuracion.Get.email.transporter.host,
+        TransporterPort = Miscelanea.Configuracion.Get.email.transporter.port,
+        TransporterSecure = Miscelanea.Configuracion.Get.email.transporter.secure
       };
-
+      Miscelanea.Util.EnviarCorreo(conf);
     }
 
     [HttpGet("inicializacion")]
@@ -96,7 +105,7 @@ namespace dotnet_mesa_de_ayuda.Controllers
     public async Task<object> GetValidarToken([FromQuery] string token)
     {
       var client = new HttpClient();
-      var request = new HttpRequestMessage(HttpMethod.Get, (string)Miscelanea.Configuracion.Get.api + "issues.json?limit=1");
+      var request = new HttpRequestMessage(HttpMethod.Get, (string)Miscelanea.Configuracion.Get.api + "users/current.json?limit=1");
       request.Headers.Add("Authorization", "Basic " + token);
       var respuesta = await client.SendAsync(request);
       if (respuesta.StatusCode == System.Net.HttpStatusCode.Unauthorized) return false;
@@ -157,30 +166,83 @@ namespace dotnet_mesa_de_ayuda.Controllers
           }
         }
       });
-      EnviarEmail(id, Miscelanea.Configuracion.Get.plantillasCorreo.registroSolicitud, true);
+      EnviarEmail(id, Miscelanea.Configuracion.Get.plantillasCorreo.solicitudRegistrada.asunto, Miscelanea.Configuracion.Get.plantillasCorreo.solicitudRegistrada.cuerpo, true);
+      EnviarEmail(id, Miscelanea.Configuracion.Get.plantillasCorreo.solicitudRegistradaInterno.asunto, Miscelanea.Configuracion.Get.plantillasCorreo.solicitudRegistradaInterno.cuerpo, false);
       return null;
     }
 
-    public async Task<object> crearPeticion([FromForm] CrearSolicitudModel payloadJO)
+    public async Task CrearPeticion(string token, int id_solicitud)
     {
-
       var client = new HttpClient();
-      var byteArray = Encoding.ASCII.GetBytes("emmanuel:22.05.97E");
-      var request = new HttpRequestMessage(HttpMethod.Post, "http://capnet2.ddns.net:3101/issues.json");
-      request.Headers.Add("Authorization", "Basic YWRtaW46YW51bHZlaGU=");
+      HttpRequestMessage request;
+      HttpResponseMessage respuesta;
+      dynamic payloadRespuesta;
+      var evidencias = db.Table("ma.evidencias")
+        .Where("id_solicitud", id_solicitud)
+        .Select("ruta")
+        .Where("id_", id_solicitud)
+        .ExecuteListDynamic()
+        .Select(elem => (string)elem.ruta);
+      var tokensEvidencia = new List<object>();
+      foreach (var elem in evidencias)
+      {
+        request = new HttpRequestMessage(HttpMethod.Post, (string)Miscelanea.Configuracion.Get.api + "uploads.json?filename=" + elem.Substring(11));
+        request.Headers.Add("Authorization", "Basic " + token);
+        request.Content = new StreamContent(System.IO.File.OpenRead(Path.Join("wwwroot", elem)));
+        respuesta = await client.SendAsync(request);
+        payloadRespuesta = JObject.Parse(await respuesta.Content.ReadAsStringAsync()).ToObject(typeof(ExpandoObject));
+        tokensEvidencia.Add(new
+        {
+          token = payloadRespuesta.upload.token,
+          filename = elem.Substring(11),
+          content_type = HeyRed.Mime.MimeTypesMap.GetMimeType(elem.Substring(11))
+        });
+      }
+      // var byteArray = Encoding.ASCII.GetBytes("emmanuel:22.05.97E");
+      request = new HttpRequestMessage(HttpMethod.Post, (string)Miscelanea.Configuracion.Get.api + "issues.json");
+      request.Headers.Add("Authorization", "Basic " + token);
+      var solicitud = db.Table("ma.solicitudes as s")
+        .Join("ma.modulos as m", "m.id", "s.id_modulo")
+        .Join("ma.concesionarios as c", "c.id", "s.id_agencia")
+        .Where("id", id_solicitud)
+        .Select("s.*", "m.id_proyecto_redmine", "m.id_categoria_redmine", "c.nombre as nombre_concesionario", "c.id_consultor_redmine")
+        .ExecuteListDynamic()[0];
       var body = JObject.FromObject(new
       {
         issue = new
         {
-          project_id = 1,
-          subject = payloadJO.asunto,
-          description = payloadJO.descripcion
+          project_id = solicitud.id_proyecto_redmine,
+          tracker_id = Miscelanea.Configuracion.Get.idPeticionTipoSoporteRedmine,
+          subject = solicitud.asunto,
+          description = solicitud.descripcion,
+          category_id = solicitud.id_categoria_redmine,
+          custom_fields = new object[] {
+            new {
+              id = Miscelanea.Configuracion.Get.idCampoConsultorRedmine,
+              value = solicitud.id_consultor_redmine
+            },
+            new {
+              id = Miscelanea.Configuracion.Get.idCampoConcesionarioRedmine,
+              value = solicitud.nombre_concesionario
+            }
+          },
+          uploads = tokensEvidencia
+          // watcher_user_ids: [] // Lista de usuarios seguidores
         }
       }).ToString();
       request.Content = new StringContent(body, Encoding.UTF8, "application/json");
-      var respuesta = await client.SendAsync(request);
-      dynamic payloadRespuesta = JObject.Parse(await respuesta.Content.ReadAsStringAsync()).ToObject(typeof(ExpandoObject));
-      return "La petición ha sido creada con el ID de redmine " + payloadRespuesta.issue.id.ToString();
+      respuesta = await client.SendAsync(request);
+      payloadRespuesta = JObject.Parse(await respuesta.Content.ReadAsStringAsync()).ToObject(typeof(ExpandoObject));
+      long idPeticion = payloadRespuesta.issue.id;
+      db.Table("ma.solicitudes")
+        .Update(new
+        {
+          id_peticion_redmine = idPeticion,
+          estado = "aceptada",
+          fecha_actualizacion = db.Raw("getutcdate()")
+        })
+        .Where("id", id_solicitud)
+        .Execute();
     }
 
     [HttpGet("solicitudes-pendientes")]
@@ -241,11 +303,12 @@ namespace dotnet_mesa_de_ayuda.Controllers
         {
           motivo_cierre = motivos_cierre[0].descripcion,
           detalle_cierre = payload.detalle_cierre,
-          estado = "cerrada"
+          estado = "cerrada",
+          fecha_actualizacion = db.Raw("getutcdate()")
         })
         .Where("id", (object)payload.id_solicitud)
         .Execute();
-      // WIP: Enviar correo
+      EnviarEmail((long)payload.id_solicitud, Miscelanea.Configuracion.Get.plantillasCorreo.solicitudCerrada.asunto, Miscelanea.Configuracion.Get.plantillasCorreo.solicitudCerrada.cuerpo, true);
       return null;
     }
 
@@ -253,7 +316,8 @@ namespace dotnet_mesa_de_ayuda.Controllers
     public object AceptarSolicitud([FromBody] JObject payloadJO)
     {
       dynamic payload = payloadJO.ToObject(typeof(ExpandoObject));
-
+      CrearPeticion((string)payload.token, (int)(long)payload.id_solicitud).Wait();
+      EnviarEmail((long)payload.id_solicitud, Miscelanea.Configuracion.Get.plantillasCorreo.solicitudAceptada.asunto, Miscelanea.Configuracion.Get.plantillasCorreo.solicitudAceptada.cuerpo, true);
       return null;
     }
   }

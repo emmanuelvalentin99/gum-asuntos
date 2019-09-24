@@ -1,5 +1,8 @@
 {
   "api": "http://capnet2.ddns.net:3101/",
+  "idPeticionTipoSoporteRedmine": 3,
+  "idCampoConsultorRedmine": 1,
+  "idCampoConcesionarioRedmine": 2,
   "connections": {
     "capnet": "Server=capnet2.ddns.net;Database=capnet_ci_cd;User Id=capnet;Password=capnet;"
   },
@@ -17,9 +20,21 @@
     }
   },
   "plantillasCorreo": {
-    "registroSolicitud": "<p>Buen día, la petición ha sido registrada con el folio #{id_solicitud}. Con los siguientes detalles:</p><p>Concesionario: {nombre_concesionario}</p><p>Asunto: {asunto}",
-    "registroSolicitudInterno": "<p>Se ha registrado una nueva solicitud con los siguientes datos:</p>...<p>Para más información, ábra este <a href=\"#\">enlace</a>.</p>",
-    "solicitudCerrada": "Sin cuerpo C:",
-    "solicitudAceptada": "Sin cuerpo C:"
+    "solicitudRegistrada": {
+      "asunto": "Mesa de ayuda - Su solicitud ha sido registrada.",
+      "cuerpo": "<p>Buen día, la petición ha sido registrada con el folio #{id_solicitud}. Con los siguientes detalles:</p><p>Concesionario: {nombre_concesionario}</p><p>Asunto: {asunto}"
+    },
+    "solicitudRegistradaInterno": {
+      "asunto": "Mesa de ayuda - Se ha registrado una nueva solicitud.",
+      "cuerpo": "<p>Se ha registrado una nueva solicitud con los siguientes datos:</p>...<p>Para más información, ábra este <a href=\"#\">enlace</a>.</p>"
+    },
+    "solicitudCerrada": {
+      "asunto": "Mesa de ayuda - Su petición ha sido cerrada.",
+      "cuerpo": "Sin cuerpo C:"
+    },
+    "solicitudAceptada": {
+      "asunto": "Mesa de ayuda - Su petición ha sido aceptada.",
+      "cuerpo": "Sin cuerpo C:"
+    }
   }
 }
