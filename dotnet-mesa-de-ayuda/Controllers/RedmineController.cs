@@ -180,7 +180,6 @@ namespace dotnet_mesa_de_ayuda.Controllers
       var evidencias = db.Table("ma.evidencias")
         .Where("id_solicitud", id_solicitud)
         .Select("ruta")
-        .Where("id", id_solicitud)
         .ExecuteListDynamic()
         .Select(elem => (string)elem.ruta);
       var tokensEvidencia = new List<object>();
@@ -188,7 +187,8 @@ namespace dotnet_mesa_de_ayuda.Controllers
       {
         request = new HttpRequestMessage(HttpMethod.Post, (string)Miscelanea.Configuracion.Get.api + "uploads.json?filename=" + elem.Substring(11));
         request.Headers.Add("Authorization", "Basic " + token);
-        request.Content = new StreamContent(System.IO.File.OpenRead(Path.Join("wwwroot", elem)));
+        request.Content = new StreamContent(System.IO.File.OpenRead(Path.Join("wwwroot", "img", elem)));
+        ((StreamContent)request.Content).Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue("application/octet-stream");
         respuesta = await client.SendAsync(request);
         payloadRespuesta = JObject.Parse(await respuesta.Content.ReadAsStringAsync()).ToObject(typeof(ExpandoObject));
         tokensEvidencia.Add(new
