@@ -180,7 +180,7 @@ namespace dotnet_mesa_de_ayuda.Controllers
       var evidencias = db.Table("ma.evidencias")
         .Where("id_solicitud", id_solicitud)
         .Select("ruta")
-        .Where("id_", id_solicitud)
+        .Where("id", id_solicitud)
         .ExecuteListDynamic()
         .Select(elem => (string)elem.ruta);
       var tokensEvidencia = new List<object>();
@@ -204,7 +204,7 @@ namespace dotnet_mesa_de_ayuda.Controllers
       var solicitud = db.Table("ma.solicitudes as s")
         .Join("ma.modulos as m", "m.id", "s.id_modulo")
         .Join("ma.concesionarios as c", "c.id", "s.id_agencia")
-        .Where("id", id_solicitud)
+        .Where("s.id", id_solicitud)
         .Select("s.*", "m.id_proyecto_redmine", "m.id_categoria_redmine", "c.nombre as nombre_concesionario", "c.id_consultor_redmine")
         .ExecuteListDynamic()[0];
       var body = JObject.FromObject(new

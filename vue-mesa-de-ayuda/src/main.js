@@ -10,6 +10,7 @@ Vue.config.productionTip = false;
 
 Vue.use(vueResource);
 
+
 new Vue({
   router,
   store,

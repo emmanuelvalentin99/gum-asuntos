@@ -85,10 +85,10 @@
                                                                         span(aria-hidden="true").carousel-control-next-icon
                                                                         span().sr-only Siguiente
                                                 div().modal-footer
-                                                    button(type="button" v-on:click="sendAceptar()" data-dismiss="modal").btn.btn-success Aceptar
+                                                    button(type="button" v-on:click="sendAceptar(solicitud)" data-dismiss="modal").btn.btn-success Aceptar
                                                     button(type="button"  data-toggle="modal" v-bind:data-target="'#modal-cerrar-lsc'+solicitud.id" data-dismiss="modal").btn.btn-danger Cerrar
                                 div().col-sm-12
-                                    button(type="button" v-on:click="sendAceptar()" class="" ).btn.btn-success Aceptar                              
+                                    button(type="button" v-on:click="sendAceptar(solicitud)" class="" ).btn.btn-success Aceptar                              
                                 div().col-sm-12
                                     button(type="button" class="" data-toggle="modal" v-bind:data-target="'#modal-cerrar-lsc'+solicitud.id").btn.btn-danger Cerrar                  
                                     div(v-bind:id="'modal-cerrar-lsc'+solicitud.id" tabindex="-1" role="dialog" aria-labelledby="myExtraLargeModalLabel" aria-hidden="true").modal.fade
@@ -122,6 +122,8 @@
 
 <script>
 import $ from "jquery";
+//import dt from "datatables.net";
+
 export default {
   data() {
     return {
@@ -129,6 +131,10 @@ export default {
         id_solicitud: 0,
         id_motivo_cierre: 0,
         detalle_cierre: ""
+      },
+      json_aceptar:{
+        id_solicitud:0,
+        token: "ZW1tYW51ZWw6MjIuMDUuOTdF"
       },
       form_aceptar: {
         id_agencia: 0,
@@ -171,39 +177,31 @@ export default {
       this.json_cerrar.id_motivo_cierre = 0;
       this.json_cerrar.detalle_cierre = "";
     },
-    sendAceptar() {
-      var formData = new FormData();
-
-      for (let element in this.form) {
-        if (element == "evidencias") {
-          for (let value of this.form[element]) formData.append(element, value);
-        } else {
-          formData.append(element, this.form[element]);
-        }
-      }
+    sendAceptar(solicitud) {
+      
 
       //Display the key/value pairs
       // for (var pair of formData.entries()) {
       //     console.log(pair[0]+ ', ' + pair[1]);
       // }
+      this.json_aceptar.id_solicitud=solicitud.id;
+      //this.json_acpetar.token=window.sessionStorage.token
       this.$http
-        .post("api/redmine/crearPeticion", formData, {
+        .post("api/redmine/aceptar-solicitud", this.json_aceptar, {
           headers: {
             "Access-Control-Allow-Origin": "*",
-            "Content-Type": "multipart/form-data"
+            "Content-Type": "application/json"
           }
         })
         .then(response => {
           alert(response);
+          this.solicitudes.splice(this.solicitudes.indexOf(solicitud), 1);
+        }, response=>{
+          alert(response);
         });
 
-      this.form.evidencias = [];
-      this.form.asunto = "";
-      this.form.email = "";
-      this.form.categoria = "";
-      this.form.modulo = "";
-      this.form.descripcion = "";
-      this.evidencias = [];
+      this.json_aceptar.id_solicitud = 0;
+      this.json_aceptar.token = "";
     }
   },
   computed: {
@@ -216,8 +214,11 @@ export default {
     this.$http.get("api/redmine/solicitudes-pendientes").then(respuesta => {
       this.solicitudes = respuesta.body.solicitudes;
       this.motivos_cierre = respuesta.body.motivosCierre;
+       
       //console.log(this.solicitudes);
     });
+
+    //$('#listaSolicitudes').DataTable();
   }
 };
 </script>
