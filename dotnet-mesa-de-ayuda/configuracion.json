@@ -1,5 +1,6 @@
 {
   "api": "http://capnet2.ddns.net:3101/",
+  "baseURI": "",
   "idPeticionTipoSoporteRedmine": 3,
   "idCampoConsultorRedmine": 1,
   "idCampoConcesionarioRedmine": 2,
@@ -22,7 +23,7 @@
   "plantillasCorreo": {
     "solicitudRegistrada": {
       "asunto": "Mesa de ayuda - Su solicitud ha sido registrada.",
-      "cuerpo": "<p>Buen día, la petición ha sido registrada con el folio #{id_solicitud}. Con los siguientes detalles:</p><p>Concesionario: {nombre_concesionario}</p><p>Asunto: {asunto}"
+      "cuerpo": "<p>Buen día, la petición ha sido registrada con el folio #{id}. Con los siguientes detalles:</p><p>Concesionario: {nombre_concesionario}</p><p>Asunto: {asunto}"
     },
     "solicitudRegistradaInterno": {
       "asunto": "Mesa de ayuda - Se ha registrado una nueva solicitud.",

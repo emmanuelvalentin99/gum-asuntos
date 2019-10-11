@@ -8,11 +8,17 @@ using System.Text;
 using MailKit.Net.Smtp;
 using MimeKit;
 using MimeKit.Text;
+using Newtonsoft.Json.Linq;
 
 namespace dotnet_mesa_de_ayuda.Miscelanea
 {
   public class Util
   {
+    public static dynamic JsonParse(string json)
+    {
+      return JToken.Parse(json).ToObject(typeof(System.Dynamic.ExpandoObject));
+    }
+
     public static string StringToSha1(string cadena)
     {
       byte[] hash;

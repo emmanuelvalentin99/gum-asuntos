@@ -54,7 +54,7 @@ namespace dotnet_mesa_de_ayuda.Controllers
         TransporterAuthPass = Miscelanea.Configuracion.Get.email.transporter.auth.pass,
         TransporterAuthUser = Miscelanea.Configuracion.Get.email.transporter.auth.user,
         TransporterHost = Miscelanea.Configuracion.Get.email.transporter.host,
-        TransporterPort = Miscelanea.Configuracion.Get.email.transporter.port,
+        TransporterPort = (int)Miscelanea.Configuracion.Get.email.transporter.port,
         TransporterSecure = Miscelanea.Configuracion.Get.email.transporter.secure
       };
       Miscelanea.Util.EnviarCorreo(conf);
@@ -95,6 +95,7 @@ namespace dotnet_mesa_de_ayuda.Controllers
       return new
       {
         id_agencia = ids[0].id,
+        nombre_agencia = concesionarios[0],
         modulos = qb.Table("ma.modulos")
           .Select("id", "categoria", "modulo")
           .ExecuteListDynamic()
@@ -252,9 +253,10 @@ namespace dotnet_mesa_de_ayuda.Controllers
       var solicitudes = qb.Table("ma.solicitudes as s")
         .Join("ma.concesionarios as c", "s.id_agencia", "c.id")
         .Join("ma.modulos as m", "s.id_modulo", "m.id")
+        .Join("ma.solicitudes_estados as se", "s.id", "se.id_solicitud")
         .Select("s.id",
           "s.asunto",
-          "s.estado",
+          "se.estado",
           "s.id_agencia",
           "c.nombre as nombre_agencia",
           "m.id as id_modulo",
@@ -265,9 +267,80 @@ namespace dotnet_mesa_de_ayuda.Controllers
           "s.fecha_registro",
           "s.no_orden",
           "s.no_placas",
-          "s.no_cita")
+          "s.no_cita",
+          "s.motivo_cierre",
+          "s.detalle_cierre")
         .Where("s.estado", "abierta")
         .ExecuteListDynamic();
+      foreach (var solicitud in solicitudes)
+      {
+        var ds = (IDictionary<string, object>)solicitud;
+        ds["contactos"] = qb.Table("ma.concesionarios_contactos")
+          .Where("id_concesionario", ds["id_agencia"])
+          .Select("rv", "nombre", "cargo", "telefono", "email")
+          .ExecuteListDynamic();
+        ds["evidencias"] = qb.Table("ma.evidencias")
+          .Where("id_solicitud", ds["id"])
+          .Select("id", "ruta")
+          .ExecuteListDynamic();
+      }
+      return new
+      {
+        solicitudes,
+        motivosCierre = db.Table("ma.motivos_cierre")
+          .Select("id", "descripcion")
+          .ExecuteDataTable()
+      };
+    }
+
+    [HttpPost("solicitudes")]
+    public object Solicitudes([FromBody] JObject payloadJO)
+    {
+      dynamic payload = payloadJO.ToObject(typeof(ExpandoObject));
+      var qb = new QueryBuilder.QueryBuilder((string)Miscelanea.Configuracion.Get.connections.capnet);
+      var qSolicitudes = qb.Table("ma.solicitudes as s")
+        .Join("ma.concesionarios as c", "s.id_agencia", "c.id")
+        .Join("ma.modulos as m", "s.id_modulo", "m.id")
+        .Join("ma.solicitudes_estados as se", "s.id", "se.id_solicitud")
+        .Select("s.id",
+          "s.asunto",
+          "se.estado",
+          "s.id_agencia",
+          "c.nombre as nombre_agencia",
+          "m.id as id_modulo",
+          "m.categoria as nombre_categoria",
+          "m.modulo as nombre_modulo",
+          "s.descripcion",
+          "s.email",
+          "s.fecha_registro",
+          "s.no_orden",
+          "s.no_placas",
+          "s.no_cita",
+          "s.motivo_cierre",
+          "s.detalle_cierre");
+      if (((IDictionary<string, object>)payload).ContainsKey("idAgencia"))
+        qSolicitudes.Where("s.id_agencia", (object)payload.idAgencia);
+      else
+      {
+        DateTime? fechaInicio = !string.IsNullOrWhiteSpace((string)payload.fechaInicio) ?
+          DateTime.ParseExact(payload.fechaInicio, "yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture) :
+          null;
+        DateTime? fechaFin = !string.IsNullOrWhiteSpace((string)payload.fechaFin) ?
+          DateTime.ParseExact(payload.fechaFin, "yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture) :
+          null;
+        if (fechaInicio == null && fechaFin != null)
+        {
+          fechaInicio = fechaFin;
+          fechaFin = null;
+        }
+        if (fechaInicio != null && fechaFin != null)
+          qSolicitudes.WhereBetween("s.fecha_registro", fechaInicio, fechaFin);
+        else if (fechaInicio != null && fechaFin == null)
+          qSolicitudes.Where("s.fecha_registro", fechaInicio);
+        else
+          qSolicitudes.Limit(100);
+      }
+      var solicitudes = qSolicitudes.ExecuteListDynamic();
       foreach (var solicitud in solicitudes)
       {
         var ds = (IDictionary<string, object>)solicitud;
@@ -319,6 +392,14 @@ namespace dotnet_mesa_de_ayuda.Controllers
       CrearPeticion((string)payload.token, (int)(long)payload.id_solicitud).Wait();
       EnviarEmail((long)payload.id_solicitud, Miscelanea.Configuracion.Get.plantillasCorreo.solicitudAceptada.asunto, Miscelanea.Configuracion.Get.plantillasCorreo.solicitudAceptada.cuerpo, true);
       return null;
+    }
+  
+    [HttpGet("valores-filtros")]
+    public object GetValoresFiltros()
+    {
+      return db.Table("ma.concesionarios")
+        .Select()
+        .ExecuteListDynamic();
     }
   }
 }

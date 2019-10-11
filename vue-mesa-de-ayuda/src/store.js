@@ -16,5 +16,12 @@ export default new Vuex.Store({
       elemento.blur();
     }
   },
-  actions: {}
+  actions: {},
+  getters: {
+    menu(state) {
+      if (state._menu && state._menu.length > 0) return state._menu;
+      let value = window.sessionStorage.getItem("menu");
+      if (value != null) return JSON.parse(value);
+    }
+  },
 });

@@ -1,0 +1,12 @@
+[
+  [
+    [
+      "/nueva/{guid}",
+      "/historial/{guid}",
+      "/historial",
+      "/login",
+      "/solicitudes"
+    ],
+    "index.html"
+  ]
+]
