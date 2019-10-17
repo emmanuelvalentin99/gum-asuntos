@@ -2,34 +2,35 @@
     div().container
         div().row: div().col-sm-1.offset-sm-11
             a(href="#" ).btn.btn-dark Atrás
-        div().input-group.row
-            
-        div().input-group.row
-            div().input-group-prepend.col-sm-2
-                span().input-group-text.form-control-sm País
-                select( v-model="json_filtros.pais"  required).form-control.form-control-sm
-                    option(v-for="pais in paises" v-bind:value="pais") {{pais}}
-            div().input-group-prepend.col-sm-2
-                span().input-group-text.form-control-sm Marca
+        div()
+            div.w-auto.d-inline-block.mr-2: div().input-group.input-group-sm
+                div().input-group-prepend: span().input-group-text.form-control-sm País
+                select( v-model="json_filtros.pais"  required).form-control.form-control-sm.w-auto
+                    option(v-for="pais in paisesFiltrados" v-bind:value="pais.pais") {{pais.pais}}
+            div.w-auto.d-inline-block.mr-2: div().input-group.input-group-sm
+                div().input-group-prepend
+                    span().input-group-text.form-control-sm Marca
                 select( v-model="json_filtros.marca" required).form-control.form-control-sm
-                    option(v-for="marca in marcasFiltrados" v-bind:value="marca") {{marca}}
-            div().input-group-prepend.col-sm-2
-                span().input-group-text.form-control-sm Grupo
+                    option(v-for="marca in marcasFiltrados" v-bind:value="marca.marca") {{marca.marca}}
+            div.w-auto.d-inline-block.mr-2: div().input-group.input-group-sm
+                div().input-group-prepend
+                    span().input-group-text.form-control-sm Grupo
                 select( v-model="json_filtros.grupo" required).form-control.form-control-sm
-                    option(v-for="cons in consesionariosFiltrados" v-bind:value="cons.grupo") {{cons.grupo}}
-            div().input-group-prepend.col-sm-2
-                span().input-group-text.form-control-sm Consesionario
-                select( v-model="json_filtros.id_concesionario" required).form-control.form-control-sm
+                    option(v-for="cons in gruposFiltrados" v-bind:value="cons.grupo") {{cons.grupo}}
+            div.w-auto.d-inline-block.mr-2: div().input-group.input-group-sm
+                div().input-group-prepend
+                    span().input-group-text.form-control-sm Consesionario
+                select( v-model="json_filtros.idConcesionario" required).form-control.form-control-sm
                     option(v-for="cons in consesionariosFiltrados" v-bind:value="cons.id") {{cons.nombre}}
-            div().input-group-prepend.col-sm-2
-                span().input-group-text.form-control-sm Desde
+            div.w-auto.d-inline-block.mr-2: div().input-group.input-group-sm
+                div().input-group-prepend
+                    span().input-group-text.form-control-sm Desde
                 input(type="date" v-model="json_filtros.fechaInicio").form-control.form-control-sm
-            div().input-group-prepend.col-sm-2
-                span().input-group-text.form-control-sm Hasta
+            div.w-auto.d-inline-block.mr-2: div().input-group.input-group-sm
+                div().input-group-prepend
+                    span().input-group-text.form-control-sm Hasta
                 input(type="date" v-model="json_filtros.fechaFin").form-control.form-control-sm
-            
-        div().row
-            button(type="button" v-on:click="applyFilter()" class="" ).btn.btn-light Aplicar
+            button(type="button" v-on:click="applyFilter()" class="" ).btn.btn-light.btn-sm Aplicar
         div().row
             table().table.table-striped
                 thead().thead-dark
@@ -61,11 +62,44 @@
                                         div(class="" role="document").modal-dialog.modal-lg.modal-dialog-scrollable
                                             div().modal-content
                                                 div().modal-header
-                                                    h5(id="exampleModalLabel").modal-title Detalle Solicitud
+                                                    div().row
+                                                        div().col-sm-8
+                                                            h5(id="exampleModalLabel").modal-title Detalle Solicitud
+                                                        div().col-sm-2.offset-sm-2
+                                                                    fieldset(disabled)                                  
+                                                                        div(v-if="solicitud.estado!='abierta' && solicitud.estado!='cerrada'").col-sm-12
+                                                                            button(type="button" v-on:click="sendAceptar(solicitud)" class="" ).btn.btn-success {{solicitud.estado}}
+                                                                        div(v-if="solicitud.estado=='cerrada'").col-sm-12
+                                                                            button(type="button" class="" data-toggle="modal" v-bind:data-target="'#modal-cerrar-lsc'+solicitud.id").btn.btn-danger Cerrada                  
+                                                                        div(v-if="solicitud.estado=='abierta'").col-sm-12
+                                                                            button(type="button" class="" data-toggle="modal" v-bind:data-target="'#modal-cerrar-lsc'+solicitud.id").btn.btn-warning Espera                  
                                                     button(type="button" data-dismiss="modal" aria-label="Close").close
                                                         span(aria-hidden="true") &times;
                                                 div().modal-body
+                                                    div().form-row
+                                                        div().form-group.col-sm-12
+                                                            button( type="button" data-toggle="collapse" v-bind:data-target="'#collapse-lsc-'+solicitud.id" aria-expanded="false" v-bind:aria-controls="'collapse-lsc-'+solicitud.id").btn.btn-info Contactos
+                                                            div(v-bind:id="'collapse-lsc-'+solicitud.id").collapse
+                                                                div().card.card-body
+                                                                    fieldset(disabled)
+                                                                        div(v-for="(contacto, indexContacto) in solicitud.contactos").form-row    
+                                                                            div().form-group.col-sm-3
+                                                                                label(  for="exampleFormControlTextarea1") Cargo
+                                                                                input(v-bind:value="contacto.cargo").form-control
+                                                                            div().form-group.col-sm-3
+                                                                                label(  for="exampleFormControlTextarea1") Nombre
+                                                                                input(v-bind:value="contacto.nombre").form-control
+                                                                            div().form-group.col-sm-3
+                                                                                label(  for="exampleFormControlTextarea1") Telefono
+                                                                                input(v-bind:value="contacto.telefono").form-control
+                                                                            div().form-group.col-sm-3
+                                                                                label(  for="exampleFormControlTextarea1") Email
+                                                                                input(v-bind:value="contacto.email").form-control
                                                     fieldset(disabled)
+                                                        div().form-row
+                                                            div().form-group.col-sm-12
+                                                                label(  for="exampleFormControlTextarea1") Usuario Asignado
+                                                                input(v-bind:value="solicitud.nombre_usuario_asignado").form-control
                                                         div().form-row
                                                             div().form-group.col-sm-12
                                                                 label(  for="exampleFormControlTextarea1") Asunto
@@ -129,12 +163,12 @@
 
                                       
                                 fieldset(disabled)                                  
-                                  div(v-if="solicitud.estado=='aceptada'").col-sm-12
-                                      button(type="button" v-on:click="sendAceptar(solicitud)" class="" ).btn.btn-success Aceptada                              
-                                  div(v-if="solicitud.estado=='cerrada'").col-sm-12
-                                      button(type="button" class="" data-toggle="modal" v-bind:data-target="'#modal-cerrar-lsc'+solicitud.id").btn.btn-danger Cerrada                  
-                                  div(v-if="solicitud.estado=='abierta'").col-sm-12
-                                      button(type="button" class="" data-toggle="modal" v-bind:data-target="'#modal-cerrar-lsc'+solicitud.id").btn.btn-warning Espera                  
+                                    div(v-if="solicitud.estado!='abierta' && solicitud.estado!='cerrada'").col-sm-12
+                                        button(type="button" v-on:click="sendAceptar(solicitud)" class="" ).btn.btn-success {{solicitud.estado}}
+                                    div(v-if="solicitud.estado=='cerrada'").col-sm-12
+                                        button(type="button" class="" data-toggle="modal" v-bind:data-target="'#modal-cerrar-lsc'+solicitud.id").btn.btn-danger Cerrada                  
+                                    div(v-if="solicitud.estado=='abierta'").col-sm-12
+                                        button(type="button" class="" data-toggle="modal" v-bind:data-target="'#modal-cerrar-lsc'+solicitud.id").btn.btn-warning Espera                  
                         td 
                             div().row
                                 div().col-sm-12
@@ -146,18 +180,16 @@
 export default {
   data() {
     return {
-      json_filtros:{
-        pais: "", 
-        marca:"", 
-        grupo: "", 
-        id_concesionario: 0,
+      json_filtros: {
+        pais: "",
+        marca: "",
+        grupo: "",
+        idConcesionario: 0,
         fechaInicio: "",
         fechaFin: ""
       },
-      marcas:[],
-      paises:[],
-      filtros:[
-         /* {
+      filtros: [
+        /* {
         id:0,
         nombre:"Tlalne",
         grupo:"Alden",
@@ -180,118 +212,118 @@ export default {
         nombre:"Janna",
         grupo:"Bogota",
         marca:"Ford",
-        pais:"Colombia"}*/],
+        pais:"Colombia"}*/
+      ],
       solicitudes: []
     };
-  }, computed: {
+  },
+  computed: {
+    paisesFiltrados() {
+      let marcasFiltradas = [];
+      for (let marca of this.filtros) {
+        if (marcasFiltradas.findIndex(elem => elem.pais == marca.pais) == -1) {
+          marcasFiltradas.push(marca);
+        }
+      }
+      return marcasFiltradas;
+    },
     marcasFiltrados() {
-        let marcas=this.filtros.filter(
+      let marcas = this.filtros.filter(
         filtros => filtros.pais == this.json_filtros.pais
       );
-      let marcasFiltradas=[];
+      let marcasFiltradas = [];
       for (let marca of marcas) {
-              if (marcasFiltradas.indexOf(marca.marca) == -1) {
-                marcasFiltradas.push(marca.marca);
-               console.log(marca.marca) 
-              }
-            }
-            
+        if (marcasFiltradas.findIndex(elem => elem.marca == marca.marca) == -1) {
+          marcasFiltradas.push(marca);
+        }
+      }
       return marcasFiltradas;
     },
     gruposFiltrados() {
-        let marcas=this.filtros.filter(
-        filtros => filtros.pais == this.json_filtros.pais
+      let marcas = this.filtros.filter(
+        filtros =>
+          filtros.pais == this.json_filtros.pais &&
+          filtros.marca == this.json_filtros.marca
       );
-      //let marcasFiltradas=[];
-      /*
-      for (let mod of marcas) {
-              if (marcasFiltradas.indexOf(mod.marca) == -1) {
-                marcasFiltradas.push(mod.marca);
-              }
-            }*/
-      return "";
+      let marcasFiltradas = [];
+      for (let marca of marcas) {
+        if (marcasFiltradas.findIndex(elem => elem.grupo == marca.grupo) == -1) {
+          marcasFiltradas.push(marca);
+        }
+      }
+      return marcasFiltradas;
     },
     consesionariosFiltrados() {
-        let marcas=this.filtros.filter(
-        filtros => filtros.pais == this.json_filtros.pais
+      return this.filtros.filter(
+        filtros =>
+          filtros.pais == this.json_filtros.pais &&
+          filtros.marca == this.json_filtros.marca &&
+          filtros.grupo == this.json_filtros.grupo
       );
-      //let marcasFiltradas=[];
-      /*for (let mod of marcas) {
-              if (marcasFiltradas.indexOf(mod.marca) == -1) {
-                marcasFiltradas.push(mod.marca);
-              }
-            }*/
-      return "";
     }
   },
   mounted() {
     this.$store.commit("isLoaderShown", true); // Esta cosa hace que se muestre el "Cargando..."
-    
-    this.$http.get("api/redmine/valores-filtros")
-                .then(
-                response => {
-                    //alert(response);
-                    let data=response.body;
-                     for (let item of data) {
-                        if (this.paises.indexOf(item.pais) == -1) {
-                            this.paises.push(item.pais);
-                        }
-                    }
-                    //this.solicitudes=response.body.solicitudes;
-                    //console.log(response);
-                    //this.$store.commit("isLoaderShown", false);
-                },
-                response => {
-                    alert(response);
-                }
-                );
-    this.$http.post("api/redmine/solicitudes", this.json_filtros, {
-                headers: {
-                    "Access-Control-Allow-Origin": "*",
-                    "Content-Type": "application/json"
-                }
-                })
-                .then(
-                response => {
-                    //alert(response);
-                    this.solicitudes=response.body.solicitudes;
-                    //console.log(this.json_filtros);
-                    this.$store.commit("isLoaderShown", false);
-                },
-                response => {
-                    alert(response);
-                }
-                );
-    
+
+    this.$http.get("api/redmine/valores-filtros").then(
+      response => {
+        //alert(response);
+        let data = response.body;
+        this.filtros = response.body;
+        //this.solicitudes=response.body.solicitudes;
+        //console.log(response);
+        //this.$store.commit("isLoaderShown", false);
+      },
+      response => {
+        alert(response);
+      }
+    );
+    this.$http
+      .post("api/redmine/solicitudes", this.json_filtros, {
+        headers: {
+          "Access-Control-Allow-Origin": "*",
+          "Content-Type": "application/json"
+        }
+      })
+      .then(
+        response => {
+          //alert(response);
+          this.solicitudes = response.body.solicitudes;
+          //console.log(this.json_filtros);
+          this.$store.commit("isLoaderShown", false);
+        },
+        response => {
+          alert(response);
+        }
+      );
   },
-  methods:{
-    
   http: {
     root: document.baseURI
-  },  applyFilter(){
-          this.$store.commit("isLoaderShown", true); // Esta cosa hace que se muestre el "Cargando..."
-        this.$http.post("api/redmine/solicitudes", this.json_filtros, {
-                headers: {
-                    "Access-Control-Allow-Origin": "*",
-                    "Content-Type": "application/json"
-                }
-                })
-                .then(
-                response => {
-                    //alert(response);
-                    this.solicitudes=response.body.solicitudes;
-                    this.json_filtros.fechaInicio="";
-                    this.json_filtros.fechaFin="";
-                    //console.log(this.json_filtros);
-                    this.$store.commit("isLoaderShown", false);
-
-                },
-                response => {
-                    alert(response);
-                }
-                );
-    
-      }
+  },
+  methods: {
+    applyFilter() {
+      this.$store.commit("isLoaderShown", true); // Esta cosa hace que se muestre el "Cargando..."
+      this.$http
+        .post("api/redmine/solicitudes", this.json_filtros, {
+          headers: {
+            "Access-Control-Allow-Origin": "*",
+            "Content-Type": "application/json"
+          }
+        })
+        .then(
+          response => {
+            //alert(response);
+            this.solicitudes = response.body.solicitudes;
+            this.json_filtros.fechaInicio = "";
+            this.json_filtros.fechaFin = "";
+            //console.log(this.json_filtros);
+            this.$store.commit("isLoaderShown", false);
+          },
+          response => {
+            alert(response);
+          }
+        );
+    }
   }
 };
 </script>

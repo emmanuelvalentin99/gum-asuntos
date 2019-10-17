@@ -254,6 +254,7 @@ namespace dotnet_mesa_de_ayuda.Controllers
         .Join("ma.concesionarios as c", "s.id_agencia", "c.id")
         .Join("ma.modulos as m", "s.id_modulo", "m.id")
         .Join("ma.solicitudes_estados as se", "s.id", "se.id_solicitud")
+        .LeftJoin("usuarios.v_usuarios as u", "u.usuario", "s.usuario_asignado")
         .Select("s.id",
           "s.asunto",
           "se.estado",
@@ -269,7 +270,9 @@ namespace dotnet_mesa_de_ayuda.Controllers
           "s.no_placas",
           "s.no_cita",
           "s.motivo_cierre",
-          "s.detalle_cierre")
+          "s.detalle_cierre",
+          "s.usuario_asignado",
+          "u.nombre as nombre_usuario_asignado")
         .Where("s.estado", "abierta")
         .ExecuteListDynamic();
       foreach (var solicitud in solicitudes)
@@ -289,6 +292,9 @@ namespace dotnet_mesa_de_ayuda.Controllers
         solicitudes,
         motivosCierre = db.Table("ma.motivos_cierre")
           .Select("id", "descripcion")
+          .ExecuteDataTable(),
+        usuarios = db.Table("usuarios.v_usuarios")
+          .Select("usuario", "nombre")
           .ExecuteDataTable()
       };
     }
@@ -302,6 +308,7 @@ namespace dotnet_mesa_de_ayuda.Controllers
         .Join("ma.concesionarios as c", "s.id_agencia", "c.id")
         .Join("ma.modulos as m", "s.id_modulo", "m.id")
         .Join("ma.solicitudes_estados as se", "s.id", "se.id_solicitud")
+        .LeftJoin("usuarios.v_usuarios as u", "u.usuario", "s.usuario_asignado")
         .Select("s.id",
           "s.asunto",
           "se.estado",
@@ -317,7 +324,9 @@ namespace dotnet_mesa_de_ayuda.Controllers
           "s.no_placas",
           "s.no_cita",
           "s.motivo_cierre",
-          "s.detalle_cierre");
+          "s.detalle_cierre",
+          "s.usuario_asignado",
+          "u.nombre as nombre_usuario_asignado");
       if (((IDictionary<string, object>)payload).ContainsKey("idAgencia"))
         qSolicitudes.Where("s.id_agencia", (object)payload.idAgencia);
       else
@@ -334,11 +343,19 @@ namespace dotnet_mesa_de_ayuda.Controllers
           fechaFin = null;
         }
         if (fechaInicio != null && fechaFin != null)
-          qSolicitudes.WhereBetween("s.fecha_registro", fechaInicio, fechaFin);
+          qSolicitudes.WhereRaw("cast(?? as date) between ? and ?", "s.fecha_registro", fechaInicio, fechaFin);
         else if (fechaInicio != null && fechaFin == null)
-          qSolicitudes.Where("s.fecha_registro", fechaInicio);
+          qSolicitudes.WhereRaw("cast(?? as date) = ?", "s.fecha_registro", fechaInicio);
         else
           qSolicitudes.Limit(100);
+        if (!string.IsNullOrWhiteSpace((string)payload.pais))
+          qSolicitudes.Where("c.pais", (string)payload.pais);
+        if (!string.IsNullOrWhiteSpace((string)payload.marca))
+          qSolicitudes.Where("c.marca", (string)payload.marca);
+        if (!string.IsNullOrWhiteSpace((string)payload.grupo))
+          qSolicitudes.Where("c.grupo", (string)payload.grupo);
+        if (payload.idConcesionario != null)
+          qSolicitudes.Where("c.id", payload.idConcesionario);
       }
       var solicitudes = qSolicitudes.ExecuteListDynamic();
       foreach (var solicitud in solicitudes)
@@ -358,6 +375,9 @@ namespace dotnet_mesa_de_ayuda.Controllers
         solicitudes,
         motivosCierre = db.Table("ma.motivos_cierre")
           .Select("id", "descripcion")
+          .ExecuteDataTable(),
+        usuarios = db.Table("usuarios.v_usuarios")
+          .Select("usuario", "nombre")
           .ExecuteDataTable()
       };
     }
@@ -393,13 +413,27 @@ namespace dotnet_mesa_de_ayuda.Controllers
       EnviarEmail((long)payload.id_solicitud, Miscelanea.Configuracion.Get.plantillasCorreo.solicitudAceptada.asunto, Miscelanea.Configuracion.Get.plantillasCorreo.solicitudAceptada.cuerpo, true);
       return null;
     }
-  
+
     [HttpGet("valores-filtros")]
     public object GetValoresFiltros()
     {
       return db.Table("ma.concesionarios")
         .Select()
         .ExecuteListDynamic();
+    }
+
+    [HttpPost("asignar-solicitud")]
+    public object AsignarSolicitud([FromBody] JObject payloadJO)
+    {
+      dynamic payload = payloadJO.ToObject(typeof(ExpandoObject));
+      db.Table("ma.solicitudes")
+        .Update(new
+        {
+          usuario_asignado = payload.usuarioAsignado
+        })
+        .Where("id", (object)payload.idSolicitud)
+        .Execute();
+      return null;
     }
   }
 }

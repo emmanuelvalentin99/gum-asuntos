@@ -49,11 +49,44 @@
                                         div(class="" role="document").modal-dialog.modal-lg.modal-dialog-scrollable
                                             div().modal-content
                                                 div().modal-header
-                                                    h5(id="exampleModalLabel").modal-title Detalle Solicitud
+                                                    div().row
+                                                        div().col-sm-8
+                                                            h5(id="exampleModalLabel").modal-title Detalle Solicitud
+                                                        div().col-sm-2.offset-sm-2
+                                                            fieldset(disabled)                                  
+                                                                div(v-if="solicitud.estado!='abierta' && solicitud.estado!='cerrada'").col-sm-12
+                                                                    button(type="button" v-on:click="sendAceptar(solicitud)" class="" ).btn.btn-success {{solicitud.estado}}
+                                                                div(v-if="solicitud.estado=='cerrada'").col-sm-12
+                                                                    button(type="button" class="" data-toggle="modal" v-bind:data-target="'#modal-cerrar-lsc'+solicitud.id").btn.btn-danger Cerrada                  
+                                                                div(v-if="solicitud.estado=='abierta'").col-sm-12
+                                                                    button(type="button" class="" data-toggle="modal" v-bind:data-target="'#modal-cerrar-lsc'+solicitud.id").btn.btn-warning Espera                  
                                                     button(type="button" data-dismiss="modal" aria-label="Close").close
-                                                        span(aria-hidden="true") &times;
+                                                            span(aria-hidden="true") &times;
                                                 div().modal-body
+                                                    div().form-row
+                                                        div().form-group.col-sm-12
+                                                            button( type="button" data-toggle="collapse" v-bind:data-target="'#collapse-lsc-'+solicitud.id" aria-expanded="false" v-bind:aria-controls="'collapse-lsc-'+solicitud.id").btn.btn-info Contactos
+                                                            div(v-bind:id="'collapse-lsc-'+solicitud.id").collapse
+                                                                div().card.card-body
+                                                                    fieldset(disabled)
+                                                                        div(v-for="(contacto, indexContacto) in solicitud.contactos").form-row    
+                                                                            div().form-group.col-sm-3
+                                                                                label(  for="exampleFormControlTextarea1") Cargo
+                                                                                input(v-bind:value="contacto.cargo").form-control
+                                                                            div().form-group.col-sm-3
+                                                                                label(  for="exampleFormControlTextarea1") Nombre
+                                                                                input(v-bind:value="contacto.nombre").form-control
+                                                                            div().form-group.col-sm-3
+                                                                                label(  for="exampleFormControlTextarea1") Telefono
+                                                                                input(v-bind:value="contacto.telefono").form-control
+                                                                            div().form-group.col-sm-3
+                                                                                label(  for="exampleFormControlTextarea1") Email
+                                                                                input(v-bind:value="contacto.email").form-control
                                                     fieldset(disabled)
+                                                        div().form-row
+                                                            div().form-group.col-sm-12
+                                                                label(  for="exampleFormControlTextarea1") Usuario Asignado
+                                                                input(v-bind:value="solicitud.nombre_usuario_asignado").form-control
                                                         div().form-row
                                                             div().form-group.col-sm-12
                                                                 label(  for="exampleFormControlTextarea1") Asunto
@@ -77,10 +110,6 @@
                                                                 input(v-bind:value="solicitud.no_placas").form-control
                                                         div().form-row
                                                             div().form-group.col-sm-12
-                                                                label(for="exampleFormControlTextarea1") Email Contacto
-                                                                input(v-bind:value="solicitud.email").form-control
-                                                        div().form-row
-                                                            div().form-group.col-sm-12
                                                                 label(for="exampleFormControlTextarea1") Descripción
                                                                 textarea(v-bind:value="solicitud.descripcion" rows="4").form-control
                                                         div.form-row
@@ -101,7 +130,7 @@
                                                                         span(aria-hidden="true").carousel-control-next-icon
                                                                         span().sr-only Siguiente
                                                     hr()
-                                                    h5(v-if="solicitud.estado=='cerrada'")  Detalle Cierre
+                                                    h5(v-if="solicitud.estado=='cerrada'")  Detalle Respuesta
                                                     fieldset(v-if="solicitud.estado=='cerrada'" disabled)
                                                         div().form-row
                                                             div().form-group.col-sm-12
@@ -109,15 +138,15 @@
                                                                 input(v-bind:value="solicitud.motivo_cierre").form-control
                                                         div().form-row
                                                             div().form-group.col-sm-12
-                                                                label(for="exampleFormControlTextarea1") Detalle Cierre
+                                                                label(for="exampleFormControlTextarea1") Detalle Respuesta
                                                                 textarea(v-bind:value="solicitud.detalle_cierre" rows="4").form-control
                                                             
                                                 div().modal-footer
                                                     
                                                     
                                 fieldset(disabled)                                  
-                                    div(v-if="solicitud.estado=='aceptada'").col-sm-12
-                                        button(type="button" v-on:click="sendAceptar(solicitud)" class="" ).btn.btn-success Aceptada                              
+                                    div(v-if="solicitud.estado!='abierta' && solicitud.estado!='cerrada'").col-sm-12
+                                        button(type="button" v-on:click="sendAceptar(solicitud)" class="" ).btn.btn-success {{solicitud.estado}}
                                     div(v-if="solicitud.estado=='cerrada'").col-sm-12
                                         button(type="button" class="" data-toggle="modal" v-bind:data-target="'#modal-cerrar-lsc'+solicitud.id").btn.btn-danger Cerrada                  
                                     div(v-if="solicitud.estado=='abierta'").col-sm-12
