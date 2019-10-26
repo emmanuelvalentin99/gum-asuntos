@@ -11,11 +11,11 @@
         div().input-group.row
             div().input-group-prepend
                 <span class="input-group-text">Fecha Inicio</span>
-                input(type="date" v-model="json_historial.fechaInicio").form-control
+                input(type="date" v-model="json_filtros.fechaInicio").form-control
         div().input-group.row
             div().input-group-prepend
                 <span class="input-group-text">Fecha Fin</span>
-                input(type="date" v-model="json_historial.fechaFin").form-control
+                input(type="date" v-model="json_filtros.fechaFin").form-control
         div().row
             button(type="button" v-on:click="applyFilter()" class="" ).btn.btn-light Aplicar
         div().row
@@ -171,6 +171,14 @@ export default {
       solicitudes: [],
       json_historial:{
           idAgencia:0
+      },
+      json_filtros: {
+        pais: "",
+        marca: "",
+        grupo: "",
+        idConcesionario: 0,
+        fechaInicio: "",
+        fechaFin: ""
       }
     };
   },
@@ -212,6 +220,31 @@ export default {
       });
      
    
+  },
+  methods: {
+    applyFilter() {
+      this.$store.commit("isLoaderShown", true); // Esta cosa hace que se muestre el "Cargando..."
+      this.$http
+        .post("api/redmine/solicitudes", this.json_filtros, {
+          headers: {
+            "Access-Control-Allow-Origin": "*",
+            "Content-Type": "application/json"
+          }
+        })
+        .then(
+          response => {
+            //alert(response);
+            this.solicitudes = response.body.solicitudes;
+            this.json_filtros.fechaInicio = "";
+            this.json_filtros.fechaFin = "";
+            //console.log(this.json_filtros);
+            this.$store.commit("isLoaderShown", false);
+          },
+          response => {
+            alert(response);
+          }
+        );
+    }
   }
 };
 </script>
