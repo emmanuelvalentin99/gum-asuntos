@@ -214,7 +214,7 @@ namespace dotnet_mesa_de_ayuda.Controllers
         {
           project_id = solicitud.id_proyecto_redmine,
           tracker_id = Miscelanea.Configuracion.Get.idPeticionTipoSoporteRedmine,
-          subject = solicitud.asunto,
+          subject = solicitud.nombre_concesionario+" / "+solicitud.asunto,
           description = solicitud.descripcion,
           category_id = solicitud.id_categoria_redmine,
           custom_fields = new object[] {
@@ -266,13 +266,16 @@ namespace dotnet_mesa_de_ayuda.Controllers
           "s.descripcion",
           "s.email",
           "s.fecha_registro",
+          "se.fecha_actualizacion",
+          "se.id_peticion_redmine",
           "s.no_orden",
           "s.no_placas",
           "s.no_cita",
           "s.motivo_cierre",
           "s.detalle_cierre",
           "s.usuario_asignado",
-          "u.nombre as nombre_usuario_asignado")
+          "u.nombre as nombre_usuario_asignado",
+          "se.fecha_fin")
         .Where("s.estado", "abierta")
         .ExecuteListDynamic();
       foreach (var solicitud in solicitudes)
@@ -320,13 +323,16 @@ namespace dotnet_mesa_de_ayuda.Controllers
           "s.descripcion",
           "s.email",
           "s.fecha_registro",
+          "se.id_peticion_redmine",
+          "se.fecha_actualizacion",
           "s.no_orden",
           "s.no_placas",
           "s.no_cita",
           "s.motivo_cierre",
           "s.detalle_cierre",
           "s.usuario_asignado",
-          "u.nombre as nombre_usuario_asignado");
+          "u.nombre as nombre_usuario_asignado",
+          "se.fecha_fin");
       if (((IDictionary<string, object>)payload).ContainsKey("idAgencia"))
         qSolicitudes.Where("s.id_agencia", (object)payload.idAgencia);
       else
@@ -354,7 +360,7 @@ namespace dotnet_mesa_de_ayuda.Controllers
           qSolicitudes.Where("c.marca", (string)payload.marca);
         if (!string.IsNullOrWhiteSpace((string)payload.grupo))
           qSolicitudes.Where("c.grupo", (string)payload.grupo);
-        if (payload.idConcesionario != null)
+        if (payload.idConcesionario != 0)
           qSolicitudes.Where("c.id", payload.idConcesionario);
       }
       var solicitudes = qSolicitudes.ExecuteListDynamic();

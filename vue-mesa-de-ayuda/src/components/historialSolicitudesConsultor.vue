@@ -1,7 +1,7 @@
 <template lang="pug">
+  div  
+    app-header(titulo="Mesa de Ayuda" modulo="Capital Network" :showMenuToggler="false")
     div().container
-        div().row: div().col-sm-1.offset-sm-11
-            a(href="#" ).btn.btn-dark Atrás
         div()
             div.w-auto.d-inline-block.mr-2: div().input-group.input-group-sm
                 div().input-group-prepend: span().input-group-text.form-control-sm País
@@ -36,10 +36,12 @@
                 thead().thead-dark
                     tr()
                         th(scope="col") #
+                        th(scope="col") # Redmine
                         th(scope="col") Agencia
-                        th(scope="col") Descripción
+                        th(scope="col") Asunto
                         th(scope="col") Estado de Solicitud
                         th(scope="col") Fecha Actualización
+                        th(scope="col") Fecha Fin
                 tbody()                     
                       tr(v-for="(solicitud, indexSolicitud) in solicitudes" v-if="solicitud.estado!='abierta'")
                         td  
@@ -49,23 +51,37 @@
                         td  
                             div().row
                                 div().col-sm-12
+                                    p {{solicitud.id_peticion_redmine}}
+                        td  
+                            div().row
+                                div().col-sm-12
                                     p {{solicitud.nombre_agencia}}
                         td 
                             div().row
                                 div().col-sm-12
-                                    p {{solicitud.descripcion}}
+                                    p {{solicitud.asunto}}
                         td
                             div().row
                                 div().col-sm-12
-                                    button(type="button" class="" data-toggle="modal" v-bind:data-target="'#modal-detalle-lsc'+solicitud.id").btn.btn-primary Detalles
+                                    div(v-if="solicitud.estado!='abierta' && solicitud.estado!='cerrada'").col-sm-12
+                                      span().font-weight-bold.mr-2 {{solicitud.estado}}
+                                      button(type="button" class="" data-toggle="modal" v-bind:data-target="'#modal-detalle-lsc'+solicitud.id").btn.btn-primary Detalles
+                                    div(v-if="solicitud.estado=='cerrada'").col-sm-12
+                                        span().font-weight-bold.mr-2 Cerrada
+                                        button(type="button" class="" data-toggle="modal" v-bind:data-target="'#modal-detalle-lsc'+solicitud.id").btn.btn-primary Detalles                 
+                                    div(v-if="solicitud.estado=='abierta'").col-sm-12
+                                        span().font-weight-bold.mr-2 Espera
+                                        button(type="button" class="" data-toggle="modal" v-bind:data-target="'#modal-detalle-lsc'+solicitud.id").btn.btn-primary Detalles               
                                     div(v-bind:id="'modal-detalle-lsc'+solicitud.id" tabindex="-1" role="dialog" aria-labelledby="myExtraLargeModalLabel" aria-hidden="true").modal.fade
                                         div(class="" role="document").modal-dialog.modal-lg.modal-dialog-scrollable
                                             div().modal-content
                                                 div().modal-header
                                                     div().row
-                                                        div().col-sm-8
-                                                            h5(id="exampleModalLabel").modal-title Detalle Solicitud
-                                                        div().col-sm-2.offset-sm-2
+                                                        div().col-sm-5
+                                                            h5(id="exampleModalLabel").modal-title Detalle Solicitud 
+                                                        div().col-sm-6
+                                                            h6() REDMINE # {{solicitud.id_peticion_redmine}}
+                                                        div().col-sm-1
                                                                     fieldset(disabled)                                  
                                                                         div(v-if="solicitud.estado!='abierta' && solicitud.estado!='cerrada'").col-sm-12
                                                                             button(type="button" v-on:click="sendAceptar(solicitud)" class="" ).btn.btn-success {{solicitud.estado}}
@@ -73,6 +89,7 @@
                                                                             button(type="button" class="" data-toggle="modal" v-bind:data-target="'#modal-cerrar-lsc'+solicitud.id").btn.btn-danger Cerrada                  
                                                                         div(v-if="solicitud.estado=='abierta'").col-sm-12
                                                                             button(type="button" class="" data-toggle="modal" v-bind:data-target="'#modal-cerrar-lsc'+solicitud.id").btn.btn-warning Espera                  
+                                                        
                                                     button(type="button" data-dismiss="modal" aria-label="Close").close
                                                         span(aria-hidden="true") &times;
                                                 div().modal-body
@@ -162,22 +179,24 @@
                                                     
 
                                       
-                                fieldset(disabled)                                  
-                                    div(v-if="solicitud.estado!='abierta' && solicitud.estado!='cerrada'").col-sm-12
-                                        button(type="button" v-on:click="sendAceptar(solicitud)" class="" ).btn.btn-success {{solicitud.estado}}
-                                    div(v-if="solicitud.estado=='cerrada'").col-sm-12
-                                        button(type="button" class="" data-toggle="modal" v-bind:data-target="'#modal-cerrar-lsc'+solicitud.id").btn.btn-danger Cerrada                  
-                                    div(v-if="solicitud.estado=='abierta'").col-sm-12
-                                        button(type="button" class="" data-toggle="modal" v-bind:data-target="'#modal-cerrar-lsc'+solicitud.id").btn.btn-warning Espera                  
+                                
+                                    
+                                    
                         td 
                             div().row
                                 div().col-sm-12
-                                    p {{solicitud.fecha_registro}}
+                                    p {{solicitud.fecha_actualizacion}}
+                        td 
+                            div().row
+                                div().col-sm-12
+                                    p {{solicitud.fecha_fin}}
   
 </template>
 
 <script>
+import AppHeader from "./Header.vue";
 export default {
+  components: { AppHeader },
   data() {
     return {
       json_filtros: {
@@ -263,6 +282,13 @@ export default {
     }
   },
   mounted() {
+    if (
+      !window.sessionStorage.getItem("token") ||
+      window.sessionStorage.getItem("token") == ""
+    ) {
+      location = "/login";
+      return;
+    }
     this.$store.commit("isLoaderShown", true); // Esta cosa hace que se muestre el "Cargando..."
 
     this.$http.get("api/redmine/valores-filtros").then(

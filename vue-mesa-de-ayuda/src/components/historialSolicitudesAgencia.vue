@@ -44,7 +44,15 @@
                         td
                             div().row
                                 div().col-sm-12
-                                    button(type="button" class="" data-toggle="modal" v-bind:data-target="'#modal-detalle-lsc'+solicitud.id").btn.btn-primary Detalles
+                                    div(v-if="solicitud.estado!='abierta' && solicitud.estado!='cerrada'").col-sm-12
+                                        span().font-weight-bold.mr-2 {{solicitud.estado}}
+                                        button(type="button" class="" data-toggle="modal" v-bind:data-target="'#modal-detalle-lsc'+solicitud.id").btn.btn-primary Detalles
+                                    div(v-if="solicitud.estado=='cerrada'").col-sm-12
+                                        span().font-weight-bold.mr-2 Cerrada
+                                        button(type="button" class="" data-toggle="modal" v-bind:data-target="'#modal-detalle-lsc'+solicitud.id").btn.btn-primary Detalles
+                                    div(v-if="solicitud.estado=='abierta'").col-sm-12
+                                        span().font-weight-bold.mr-2 Espera
+                                        button(type="button" class="" data-toggle="modal" v-bind:data-target="'#modal-detalle-lsc'+solicitud.id").btn.btn-primary Detalles
                                     div(v-bind:id="'modal-detalle-lsc'+solicitud.id" tabindex="-1" role="dialog" aria-labelledby="myExtraLargeModalLabel" aria-hidden="true").modal.fade
                                         div(class="" role="document").modal-dialog.modal-lg.modal-dialog-scrollable
                                             div().modal-content
@@ -143,18 +151,15 @@
                                                             
                                                 div().modal-footer
                                                     
-                                                    
-                                fieldset(disabled)                                  
-                                    div(v-if="solicitud.estado!='abierta' && solicitud.estado!='cerrada'").col-sm-12
-                                        button(type="button" v-on:click="sendAceptar(solicitud)" class="" ).btn.btn-success {{solicitud.estado}}
-                                    div(v-if="solicitud.estado=='cerrada'").col-sm-12
-                                        button(type="button" class="" data-toggle="modal" v-bind:data-target="'#modal-cerrar-lsc'+solicitud.id").btn.btn-danger Cerrada                  
-                                    div(v-if="solicitud.estado=='abierta'").col-sm-12
-                                        button(type="button" class="" data-toggle="modal" v-bind:data-target="'#modal-cerrar-lsc'+solicitud.id").btn.btn-warning Espera                  
+                                    
                         td 
                             div().row
                                 div().col-sm-12
-                                    p {{solicitud.fecha_registro}}
+                                    p {{solicitud.fecha_actualizacion}}
+                        td 
+                            div().row
+                                div().col-sm-12
+                                    p {{solicitud.fecha_fin}}
   
 </template>
 

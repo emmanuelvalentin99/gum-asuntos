@@ -123,7 +123,7 @@
               td 
                   div().row
                       div().col-sm-12
-                          p {{solicitud.fecha_registro}}
+                          p {{solicitud.fecha_actualizacion}}
                     
 
 
@@ -260,7 +260,7 @@ export default {
       !window.sessionStorage.getItem("token") ||
       window.sessionStorage.getItem("token") == ""
     ) {
-      location = "/#/login";
+      location = "/login";
       return;
     }
     this.$store.commit("isLoaderShown", true);
