@@ -88,7 +88,7 @@
                                                                         div(v-if="solicitud.estado=='cerrada'").col-sm-12
                                                                             button(type="button" class="" data-toggle="modal" v-bind:data-target="'#modal-cerrar-lsc'+solicitud.id").btn.btn-danger Cerrada                  
                                                                         div(v-if="solicitud.estado=='abierta'").col-sm-12
-                                                                            button(type="button" class="" data-toggle="modal" v-bind:data-target="'#modal-cerrar-lsc'+solicitud.id").btn.btn-warning Espera                  
+                                                                            button(type="button" class="" data-toggle="modal" v-bind:data-target="'#modal-cerrar-lsc'+solicitud.id").btn.btn-warning Abierta                  
                                                         
                                                     button(type="button" data-dismiss="modal" aria-label="Close").close
                                                         span(aria-hidden="true") &times;
@@ -203,7 +203,8 @@ export default {
         pais: "",
         marca: "",
         grupo: "",
-        idConcesionario: 0,
+        idAgencia: 0,
+        estado:"",
         fechaInicio: "",
         fechaFin: ""
       },
@@ -233,7 +234,8 @@ export default {
         marca:"Ford",
         pais:"Colombia"}*/
       ],
-      solicitudes: []
+      solicitudes: [],
+      estados:[]
     };
   },
   computed: {
@@ -315,6 +317,7 @@ export default {
         response => {
           //alert(response);
           this.solicitudes = response.body.solicitudes;
+          this.estados = response.body.solicitudes;
           //console.log(this.json_filtros);
           this.$store.commit("isLoaderShown", false);
         },

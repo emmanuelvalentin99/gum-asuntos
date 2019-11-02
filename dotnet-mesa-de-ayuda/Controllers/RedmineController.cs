@@ -246,11 +246,13 @@ namespace dotnet_mesa_de_ayuda.Controllers
         .Execute();
     }
 
-    [HttpGet("solicitudes-pendientes")]
-    public object GetSolicitudesPendientes()
+    [HttpPost("solicitudes-pendientes")]
+    public object GetSolicitudesPendientes([FromBody] JObject payloadJO)
     {
+      dynamic payload = payloadJO.ToObject(typeof(ExpandoObject));
       var qb = new QueryBuilder.QueryBuilder((string)Miscelanea.Configuracion.Get.connections.capnet);
-      var solicitudes = qb.Table("ma.solicitudes as s")
+      
+      var qSolicitudes = qb.Table("ma.solicitudes as s")
         .Join("ma.concesionarios as c", "s.id_agencia", "c.id")
         .Join("ma.modulos as m", "s.id_modulo", "m.id")
         .Join("ma.solicitudes_estados as se", "s.id", "se.id_solicitud")
@@ -276,8 +278,14 @@ namespace dotnet_mesa_de_ayuda.Controllers
           "s.usuario_asignado",
           "u.nombre as nombre_usuario_asignado",
           "se.fecha_fin")
-        .Where("s.estado", "abierta")
-        .ExecuteListDynamic();
+        .Where("s.estado", "abierta");
+        if ((int)payload.idAgencia!=0){
+          qSolicitudes.Where("s.id_agencia",payload.idAgencia);
+        }
+        if (!string.IsNullOrWhiteSpace((string)payload.usuario)){
+          qSolicitudes.Where("s.usuario_asignado", (string)payload.usuario);
+        }
+      var solicitudes=qSolicitudes.ExecuteListDynamic();
       foreach (var solicitud in solicitudes)
       {
         var ds = (IDictionary<string, object>)solicitud;
@@ -333,10 +341,8 @@ namespace dotnet_mesa_de_ayuda.Controllers
           "s.usuario_asignado",
           "u.nombre as nombre_usuario_asignado",
           "se.fecha_fin");
-      if (((IDictionary<string, object>)payload).ContainsKey("idAgencia"))
-        qSolicitudes.Where("s.id_agencia", (object)payload.idAgencia);
-      else
-      {
+      if (((IDictionary<string, object>)payload).ContainsKey("idAgencia") && payload.idAgencia!=0)
+          qSolicitudes.Where("s.id_agencia", (object)payload.idAgencia);
         DateTime? fechaInicio = !string.IsNullOrWhiteSpace((string)payload.fechaInicio) ?
           DateTime.ParseExact(payload.fechaInicio, "yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture) :
           null;
@@ -360,9 +366,9 @@ namespace dotnet_mesa_de_ayuda.Controllers
           qSolicitudes.Where("c.marca", (string)payload.marca);
         if (!string.IsNullOrWhiteSpace((string)payload.grupo))
           qSolicitudes.Where("c.grupo", (string)payload.grupo);
-        if (payload.idConcesionario != 0)
-          qSolicitudes.Where("c.id", payload.idConcesionario);
-      }
+        if (!string.IsNullOrWhiteSpace((string)payload.estado))
+          qSolicitudes.Where("se.estado", (string)payload.estado);
+    
       var solicitudes = qSolicitudes.ExecuteListDynamic();
       foreach (var solicitud in solicitudes)
       {

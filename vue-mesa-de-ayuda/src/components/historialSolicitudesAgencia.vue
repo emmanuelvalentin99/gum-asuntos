@@ -8,14 +8,19 @@
                     span(aria-hidden="true") &times;
         div().row.col-sm-1.offset-sm-11
             a(href="#" ).btn.btn-dark Atrás
-        div().input-group.row
+        div.w-auto.d-inline-block.mr-2: div().input-group.input-group-sm
+                div().input-group-prepend
+                    span().input-group-text.form-control-sm Desde
+                input(type="date" v-model="json_filtros.fechaInicio").form-control.form-control-sm
+        div.w-auto.d-inline-block.mr-2: div().input-group.input-group-sm
             div().input-group-prepend
-                <span class="input-group-text">Fecha Inicio</span>
-                input(type="date" v-model="json_filtros.fechaInicio").form-control
-        div().input-group.row
+                span().input-group-text.form-control-sm Hasta
+            input(type="date" v-model="json_filtros.fechaFin").form-control.form-control-sm
+        div.w-auto.d-inline-block.mr-2: div().input-group.input-group-sm
             div().input-group-prepend
-                <span class="input-group-text">Fecha Fin</span>
-                input(type="date" v-model="json_filtros.fechaFin").form-control
+              span().input-group-text.form-control-sm Estado
+            select( v-model="json_filtros.estado" required).form-control.form-control-sm
+              option(v-for="solicitud in solicitudesFiltradas" v-bind:value="solicitud.estado") {{solicitud.estado}}
         div().row
             button(type="button" v-on:click="applyFilter()" class="" ).btn.btn-light Aplicar
         div().row
@@ -51,7 +56,7 @@
                                         span().font-weight-bold.mr-2 Cerrada
                                         button(type="button" class="" data-toggle="modal" v-bind:data-target="'#modal-detalle-lsc'+solicitud.id").btn.btn-primary Detalles
                                     div(v-if="solicitud.estado=='abierta'").col-sm-12
-                                        span().font-weight-bold.mr-2 Espera
+                                        span().font-weight-bold.mr-2 Abierta
                                         button(type="button" class="" data-toggle="modal" v-bind:data-target="'#modal-detalle-lsc'+solicitud.id").btn.btn-primary Detalles
                                     div(v-bind:id="'modal-detalle-lsc'+solicitud.id" tabindex="-1" role="dialog" aria-labelledby="myExtraLargeModalLabel" aria-hidden="true").modal.fade
                                         div(class="" role="document").modal-dialog.modal-lg.modal-dialog-scrollable
@@ -169,6 +174,7 @@ export default {
     return {
       liga_incorrecta: false,
       solicitudes: [],
+      estados:[],
       json_historial:{
           idAgencia:0
       },
@@ -176,7 +182,8 @@ export default {
         pais: "",
         marca: "",
         grupo: "",
-        idConcesionario: 0,
+        idAgencia: 0,
+        estado: "",
         fechaInicio: "",
         fechaFin: ""
       }
@@ -184,6 +191,17 @@ export default {
   },
   http: {
     root: document.baseURI
+  },
+  computed:{
+      solicitudesFiltradas(){
+            let solicitudesFiltradas = [];
+            for (let solicitud of this.estados) {
+                if (solicitudesFiltradas.findIndex(elem => elem.estado == solicitud.estado) == -1) {
+                solicitudesFiltradas.push(solicitud);
+                }
+            }
+            return solicitudesFiltradas;
+      }
   },
   mounted() {
    this.$store.commit("isLoaderShown", true); // Esta cosa hace que se muestre el "Cargando..."
@@ -195,8 +213,8 @@ export default {
           this.liga_incorrecta = true;
         } else {
           this.liga_incorrecta = false;
-          this.json_historial.idAgencia = data.id_agencia;
-          this.$http.post("api/redmine/solicitudes", this.json_historial, {
+          this.json_filtros.idAgencia = data.id_agencia;
+          this.$http.post("api/redmine/solicitudes", this.json_filtros, {
                 headers: {
                     "Access-Control-Allow-Origin": "*",
                     "Content-Type": "application/json"
@@ -206,6 +224,7 @@ export default {
                 response => {
                     //alert(response);
                     this.solicitudes=response.body.solicitudes;
+                    this.estados = response.body.solicitudes;
                     //console.log(this.json_historial);
                      this.$store.commit("isLoaderShown", false);
                 },
@@ -237,6 +256,7 @@ export default {
             this.solicitudes = response.body.solicitudes;
             this.json_filtros.fechaInicio = "";
             this.json_filtros.fechaFin = "";
+            this.json_filtros.estado = "";
             //console.log(this.json_filtros);
             this.$store.commit("isLoaderShown", false);
           },

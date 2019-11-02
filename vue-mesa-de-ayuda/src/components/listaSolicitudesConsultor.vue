@@ -3,6 +3,18 @@
     app-header(titulo="Mesa de Ayuda" modulo="Capital Network" :showMenuToggler="false")
     div().container
       div().row
+        div.w-auto.d-inline-block.mr-2: div().input-group.input-group-sm
+            div().input-group-prepend
+              span().input-group-text.form-control-sm Consesionario
+            select( v-model="json_filtros.idAgencia" required).form-control.form-control-sm
+              option(v-for="solicitud in solicitudesFiltradas" v-bind:value="solicitud.id_agencia") {{solicitud.nombre_agencia}}
+        div.w-auto.d-inline-block.mr-2: div().input-group.input-group-sm
+            div().input-group-prepend
+              span().input-group-text.form-control-sm Usuario
+            select( v-model="json_filtros.usuario" required).form-control.form-control-sm
+              option(v-for="usuario in usuarios" v-bind:value="usuario.usuario") {{usuario.nombre}}
+        button(type="button" v-on:click="applyFilter()" class="" ).btn.btn-light.btn-sm Aplicar
+      div().row
         table(id="listaSolicitudes").table.table-striped
           thead().thead-dark
             tr()
@@ -138,6 +150,10 @@ export default {
   components: { AppHeader },
   data() {
     return {
+      json_filtros:{
+        idAgencia:0,
+        usuario:""
+      },
       json_cerrar: {
         id_solicitud: 0,
         id_motivo_cierre: 0,
@@ -163,12 +179,36 @@ export default {
         evidencias: []
       },
       solicitudes: [],
+      consesionarios:[],
       usuarios:[],
       motivos_cierre: [],
       modal: ""
     };
   },
   methods: {
+    applyFilter() {
+      this.$store.commit("isLoaderShown", true); // Esta cosa hace que se muestre el "Cargando..."
+      this.$http
+        .post("api/redmine/solicitudes-pendientes", this.json_filtros, {
+          headers: {
+            "Access-Control-Allow-Origin": "*",
+            "Content-Type": "application/json"
+          }
+        })
+        .then(
+          response => {
+            //alert(response);
+            this.solicitudes = response.body.solicitudes;
+            this.json_filtros.idAgencia = 0;
+            this.json_filtros.usuario = "";
+            //console.log(this.json_filtros);
+            this.$store.commit("isLoaderShown", false);
+          },
+          response => {
+            alert(response);
+          }
+        );
+    },
     sendCerrar(solicitud) {
       $("#modal-cerrar-lsc" + solicitud.id).modal("hide");
       this.$store.commit("isLoaderShown", true);
@@ -253,6 +293,15 @@ export default {
     modalFunction() {
       $("#modal1").modal("hide");
       return "";
+    },
+    solicitudesFiltradas(){
+       let solicitudesFiltradas = [];
+      for (let solicitud of this.consesionarios) {
+        if (solicitudesFiltradas.findIndex(elem => elem.id_agencia == solicitud.id_agencia) == -1) {
+          solicitudesFiltradas.push(solicitud);
+        }
+      }
+      return solicitudesFiltradas;
     }
   },
   mounted() {
@@ -264,9 +313,18 @@ export default {
       return;
     }
     this.$store.commit("isLoaderShown", true);
-    this.$http.get("api/redmine/solicitudes-pendientes").then(respuesta => {
+    this.$http.post("api/redmine/solicitudes-pendientes",this.json_filtros, {
+        headers: {
+          "Access-Control-Allow-Origin": "*",
+          "Content-Type": "application/json"
+        }
+      }).then(respuesta => {
+      let usuario=atob(window.sessionStorage.getItem("token")).split(":")[0];
+      
       this.solicitudes = respuesta.body.solicitudes;
+      this.consesionarios = respuesta.body.solicitudes;
       this.usuarios = respuesta.body.usuarios;
+      this.usuarios.push({usuario:usuario,nombre:"yo mismo"});
       this.motivos_cierre = respuesta.body.motivosCierre;
       this.$store.commit("isLoaderShown", false);
     });

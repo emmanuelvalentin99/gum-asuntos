@@ -38,7 +38,7 @@
                 select( v-model="categoria"  required).form-control
                   option(v-for="cat in categorias" v-bind:value="cat") {{cat}}
               div(class="form-group col-sm-6")
-                label() *Seciión/Pantalla:
+                label() *Sección/Pantalla:
                 select( v-model="form.id_modulo" required).form-control
                   option(v-for="mod in modulosFiltrados" v-bind:value="mod.id") {{mod.modulo}}
             div(class="form-row")
