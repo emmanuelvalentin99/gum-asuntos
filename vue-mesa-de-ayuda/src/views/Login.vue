@@ -13,6 +13,7 @@
             input#password(type="password" v-model="usuario.contrasenia" required).form-control.form-control-sm
           div.text-center: div.btn-group.btn-group-sm
             button.btn.btn-primary Iniciar sesión
+            //- coment
             //- div.btn-group
             //-   button(data-toggle="dropdown").btn.btn-primary.btn-sm: i.material-icons language
             //-   div.dropdown-menu
