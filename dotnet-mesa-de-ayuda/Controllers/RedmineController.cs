@@ -60,6 +60,7 @@ namespace dotnet_mesa_de_ayuda.Controllers
       Miscelanea.Util.EnviarCorreo(conf);
     }
 
+
     [HttpGet("inicializacion")]
     public async Task<object> GetInicializacion([FromQuery] string guid)
     {
@@ -446,6 +447,24 @@ namespace dotnet_mesa_de_ayuda.Controllers
         .Where("id", (object)payload.idSolicitud)
         .Execute();
       return null;
+    }
+    [HttpGet("login")]
+    public object ValidarToken([FromQuery] string token)
+    {
+      var qb = new QueryBuilder.QueryBuilder((string)Miscelanea.Configuracion.Get.connections.capnet);
+      var bitesToken= Convert.FromBase64String(token);
+      var strToken= System.Text.ASCIIEncoding.ASCII.GetString(bitesToken);
+      var usuario= strToken.Split(':')[0];
+      var user = qb.Table("ma.usuario")
+        .Where("usuario",usuario)
+        .Where("token",token)
+        .Select("id")
+        .ExecuteListDynamic();
+      if (user.Count != 1) 
+        return false;
+      else
+        return true;
+      /*return null;*/
     }
   }
 }

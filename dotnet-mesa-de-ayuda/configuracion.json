@@ -5,7 +5,7 @@
   "idCampoConsultorRedmine": 1,
   "idCampoConcesionarioRedmine": 2,
   "connections": {
-    "capnet": "Server=capnet2.ddns.net;Database=capnet_ci_cd;User Id=capnet;Password=capnet;"
+    "capnet": "Server=localhost\\SQLEXPRESS;Database=capnet_ci_cd;User Id=sa;Password=22.05.97Ea;"
   },
   "culture": "es-MX",
   "email": {

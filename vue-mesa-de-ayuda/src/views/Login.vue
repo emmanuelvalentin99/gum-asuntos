@@ -38,7 +38,7 @@ export default {
       let token = window.btoa(
         this.usuario.usuario + ":" + this.usuario.contrasenia
       );
-      let respuesta = await this.$http.get("/api/redmine/validar-token", {
+      let respuesta = await this.$http.get("/api/redmine/login", {
         params: {
           token: token
         }
