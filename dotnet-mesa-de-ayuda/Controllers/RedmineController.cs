@@ -59,7 +59,41 @@ namespace dotnet_mesa_de_ayuda.Controllers
       };
       Miscelanea.Util.EnviarCorreo(conf);
     }
+    [HttpGet("login-config")]
+    public object loginConfig([FromQuery] string token)
+    {
+      var qb = new QueryBuilder.QueryBuilder((string)Miscelanea.Configuracion.Get.connections.capnet);
+      var bitesToken= Convert.FromBase64String(token);
+      var strToken= System.Text.ASCIIEncoding.ASCII.GetString(bitesToken);
+      var usuario= strToken.Split(':')[0];
+      var user = qb.Table("ma.usuario")
+        .Where("usuario",usuario)
+        .Where("token",token)
+        .Select("id","id_perfil","id_area","id_departamento","nombre","usuario")
+        .ExecuteListDynamic();
+      if (user.Count != 1) 
+        return new{
+          usuario=(object)null,
+          usuarios=(object)null,
+          departamentos=(object)null
+        };
+      else
+        return new{
+          usuario=user,
+          area=qb.Table("ma.area")
+          .Where("id",user[0].id_area)
+          .Select("id","nombre")
+          .ExecuteListDynamic(),
+          usuarios=qb.Table("ma.usuario")
+          .Where("id_area",user[0].id_area)
+          .Select("id","nombre","id_departamento","usuario")
+          .ExecuteListDynamic(),
+          departamentos= qb.Table("ma.departamento")
+          .Select("id","nombre")
+          .ExecuteListDynamic()
+          };
 
+    }
 
     [HttpGet("inicializacion")]
     public async Task<object> GetInicializacion([FromQuery] string guid)
@@ -126,7 +160,62 @@ namespace dotnet_mesa_de_ayuda.Controllers
       public string email { get; set; }
       public List<IFormFile> evidencias { get; set; }
     }
+    public class CrearAsuntoModel
+    {
+      public float  id_area { get; set; }
+      public float  id_departamento { get; set; }
+      public string usuario_asignado { get; set; }
+      public string descripcion { get; set; }
+      public float interno_externo { get; set; }
+      public string fecha_fin { get; set; }
+      public string asunto { get; set; }
+      public List<IFormFile> evidencias { get; set; }
+    }
 
+
+    [HttpPost("crearAsunto")]
+    public object CrearAsunto([FromForm] CrearAsuntoModel payload){
+      var qb = new QueryBuilder.QueryBuilder((string)Miscelanea.Configuracion.Get.connections.capnet);
+      int id = 0;
+      DateTime fecha_fin = DateTime.ParseExact(payload.fecha_fin, "yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture);
+      qb.Transaction(trx =>
+      {
+        id = trx.Table("ma.asuntos")
+          .Insert(new
+          {
+            payload.id_area,
+            payload.id_departamento,
+            payload.usuario_asignado,
+            payload.descripcion,
+            payload.interno_externo,
+            fecha_fin,
+            payload.asunto,
+            fecha_registro = trx.Raw("getutcdate()"),
+            fecha_actualizacion = trx.Raw("getutcdate()"),
+            estado = "abierta"
+          }, new string[] { "inserted.id" })
+          .ExecuteListDynamic()[0].id;
+        if (payload.evidencias != null)
+        {
+          if (!Directory.Exists("wwwroot/img/" + DateTime.UtcNow.ToString("yyyy-MM-dd")))
+            Directory.CreateDirectory("wwwroot/img/" + DateTime.UtcNow.ToString("yyyy-MM-dd"));
+          foreach (var elem in payload.evidencias)
+          {
+            var archivo = DateTime.UtcNow.ToString("yyyy-MM-dd") + "/" + Guid.NewGuid().ToString("N") + "." + HeyRed.Mime.MimeTypesMap.GetExtension(elem.ContentType);
+            using (var fs = new FileStream("wwwroot/img/" + archivo, FileMode.Create))
+              elem.CopyTo(fs);
+            trx.Table("ma.evidencias")
+              .Insert(new
+              {
+                id_solicitud = id,
+                ruta = archivo
+              })
+              .Execute();
+          }
+        }
+      });
+      return null;
+    }
     [HttpPost("crearSolicitud")]
     public object CrearSolicitud([FromForm] CrearSolicitudModel payload)
     {
@@ -245,6 +334,70 @@ namespace dotnet_mesa_de_ayuda.Controllers
         })
         .Where("id", id_solicitud)
         .Execute();
+    }
+
+    [HttpPost("asuntos-pendientes")]
+    public object GetSolicitudesPendientes([FromBody] JObject payloadJO)
+    {
+      dynamic payload = payloadJO.ToObject(typeof(ExpandoObject));
+      var qb = new QueryBuilder.QueryBuilder((string)Miscelanea.Configuracion.Get.connections.capnet);
+      
+      var qSolicitudes = qb.Table("ma.solicitudes as s")
+        .Join("ma.concesionarios as c", "s.id_agencia", "c.id")
+        .Join("ma.modulos as m", "s.id_modulo", "m.id")
+        .Join("ma.solicitudes_estados as se", "s.id", "se.id_solicitud")
+        .LeftJoin("usuarios.v_usuarios as u", "u.usuario", "s.usuario_asignado")
+        .Select("s.id",
+          "s.asunto",
+          "se.estado",
+          "s.id_agencia",
+          "c.nombre as nombre_agencia",
+          "m.id as id_modulo",
+          "m.categoria as nombre_categoria",
+          "m.modulo as nombre_modulo",
+          "s.descripcion",
+          "s.email",
+          "s.fecha_registro",
+          "se.fecha_actualizacion",
+          "se.id_peticion_redmine",
+          "s.no_orden",
+          "s.no_placas",
+          "s.no_cita",
+          "s.motivo_cierre",
+          "s.detalle_cierre",
+          "s.usuario_asignado",
+          "u.nombre as nombre_usuario_asignado",
+          "se.fecha_fin")
+        .Where("s.estado", "abierta");
+        if ((int)payload.idAgencia!=0){
+          qSolicitudes.Where("s.id_agencia",payload.idAgencia);
+        }
+        if (!string.IsNullOrWhiteSpace((string)payload.usuario)){
+          qSolicitudes.Where("s.usuario_asignado", (string)payload.usuario);
+        }
+      var solicitudes=qSolicitudes.ExecuteListDynamic();
+      foreach (var solicitud in solicitudes)
+      {
+        var ds = (IDictionary<string, object>)solicitud;
+        ds["contactos"] = qb.Table("ma.concesionarios_contactos")
+          .Where("id_concesionario", ds["id_agencia"])
+          .Select("rv", "nombre", "cargo", "telefono", "email")
+          .ExecuteListDynamic();
+        ds["evidencias"] = qb.Table("ma.evidencias")
+          .Where("id_solicitud", ds["id"])
+          .Select("id", "ruta")
+          .ExecuteListDynamic();
+      }
+      return new
+      {
+        solicitudes,
+        motivosCierre = db.Table("ma.motivos_cierre")
+          .Select("id", "descripcion")
+          .ExecuteDataTable(),
+        usuarios = db.Table("usuarios.v_usuarios")
+          .Select("usuario", "nombre")
+          .ExecuteDataTable()
+      };
     }
 
     [HttpPost("solicitudes-pendientes")]

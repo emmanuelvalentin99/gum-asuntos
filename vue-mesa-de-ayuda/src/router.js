@@ -2,9 +2,11 @@ import Vue from "vue";
 import Router from "vue-router";
 import Login from "./views/Login.vue";
 import Solicitud from "./components/solicitud.vue";
+import Asunto from "./components/asunto.vue";
 import HistorialSolicitudesAgencia from "./components/historialSolicitudesAgencia.vue";
 import ListaSolicitudesConsultor from "./components/listaSolicitudesConsultor.vue";
 import HistorialSolicitudesConsultor from "./components/historialSolicitudesConsultor.vue";
+import ListaAsuntos from "./components/listaAsuntos.vue";
 
 Vue.use(Router);
 
@@ -16,6 +18,16 @@ export default new Router({
       path: "/nueva/:guid",
       name: "nueva-solicitud",
       component: Solicitud
+    },
+    {
+      path: "/asunto",
+      name: "nuevo-asunto",
+      component: Asunto
+    },
+    {
+      path: "/pendientes",
+      name: "asuntos-pendientes",
+      component: ListaAsuntos
     },
     {
       path: "/login",

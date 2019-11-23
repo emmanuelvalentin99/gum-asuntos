@@ -5,7 +5,9 @@
       "/historial/{guid}",
       "/historial",
       "/login",
-      "/solicitudes"
+      "/solicitudes",
+      "/pendientes",
+      "/asunto"
     ],
     "index.html"
   ]

@@ -47,7 +47,7 @@ export default {
       this.isValid = respuesta.body;
       if (this.isValid) {
         window.sessionStorage.setItem("token", token);
-        this.$router.push({ name: "lista-consultor" });
+        this.$router.push({ name: "asuntos-pendientes" });
       }
     }
   }
