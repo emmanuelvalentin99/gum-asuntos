@@ -5,6 +5,9 @@
       i(style="font-size: 32px; vertical-align: middle;").material-icons.pl-1.pr-1 menu
     |  {{titulo}} 
     small(style="color: #6c757d;") {{modulo}}
+        a(id="links" href="/asunto") Registro
+        a(id="links" href="/pendientes") Pendientes
+        a(id="links" href="/cancelado") Cancelado/Suspendido
     a(v-show="!exitIfOpenerQ && !exitIfOpener && showBackButton" href="javascript:history.back()").btn.btn-sm.float-right.btn-outline-light Atrás
     a(v-show="(exitIfOpenerQ || exitIfOpener) && showBackButton" href="javascript:window.close();").btn.btn-sm.float-right.btn-outline-light Salir
 </template>
@@ -13,7 +16,10 @@
 body {
   padding-top: 48px;
 }
-
+#links{
+  margin: 0.5rem;
+  text-decoration:none;
+}
 #app-header + div {
   margin-top: 0.5rem;
 }

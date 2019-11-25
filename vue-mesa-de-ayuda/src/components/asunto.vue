@@ -12,7 +12,7 @@
           strong ¡Asunto registrado!
           button(@click.prevent="send_solicitud = false").close: span &times;
       div.row: div.col-sm-8
-        h4(v-show="nombre_agencia") {{nombre_agencia}}
+        h6(v-show="usuario_activo.nombre") Bienvenido: {{usuario_activo.nombre}}
       div.row: div(class="col-sm-12")
         fieldset(v-bind:disabled="liga_incorrecta")
           form(v-on:submit.prevent="sendSolicitud()")
@@ -28,12 +28,12 @@
                     option(value=1) Interno
             fieldset(v-bind:disabled="email_configurado")
               div(class="form-row")
-                  div( class="form-group col-sm-4") *Responsable:
-                    select( v-model="usuario_asignado" required).form-control
-                      option(v-for="user in usuarios" v-bind:value="user") {{user.nombre}}
                   div(class="form-group col-sm-4") *Departamento:
                     select( v-model="form.id_departamento" required).form-control
-                      option(v-for="dep in departamentoFiltrado" v-bind:value="dep.id") {{dep.nombre}}
+                      option(v-for="dep in departamentos" v-bind:value="dep.id") {{dep.nombre}}
+                  div( class="form-group col-sm-4") *Responsable:
+                    select( v-model="usuario_asignado" required).form-control
+                      option(v-for="user in usuariosFiltrados" v-bind:value="user") {{user.nombre}}
                   div( class="form-group col-sm-4") *Fecha de Término:
                     input(type="date" v-model="form.fecha_fin" required).form-control
         
@@ -86,6 +86,7 @@ export default {
         id_area:0,
         id_departamento:0 ,
         usuario_asignado:"",
+        usuario_creacion:"",
         descripcion:"",
         interno_externo:0,
         fecha_fin:"",
@@ -98,11 +99,11 @@ export default {
     root: document.baseURI
   },
   computed: {
-    departamentoFiltrado() {
+    usuariosFiltrados() {
       
        
-      return this.departamentos.filter(
-        departamentos => departamentos.id == this.usuario_asignado.id_departamento
+      return this.usuarios.filter(
+        usuarios => usuarios.id_departamento == this.form.id_departamento
       );
       
     }
@@ -111,6 +112,7 @@ export default {
     sendSolicitud() {
       var formData = new FormData();
       this.form.usuario_asignado=this.usuario_asignado.usuario;
+      this.form.usuario_creacion=this.usuario_activo.usuario;
       for (let element in this.form) {
         if (element == "evidencias") {
           for (let value of this.form[element]) formData.append(element, value);
@@ -187,7 +189,7 @@ export default {
 
     this.$store.commit("isLoaderShown", true);
    
-    console.log(JSON.stringify(this.form) ) ;
+   // console.log(JSON.stringify(this.form) ) ;
     this.$http
       .get("api/redmine/login-config?token="+window.sessionStorage.getItem("token"))
       .then(
@@ -200,6 +202,17 @@ export default {
             this.departamentos=data.departamentos;
             this.usuarios = data.usuarios;
             this.usuario_activo=data.usuario[0];
+            if(this.usuario_activo.id_perfil>2){
+              location = "/pendientes";
+              return;
+            }
+            this.usuarios.push({
+              id: this.usuario_activo.id,
+              id_area: this.usuario_activo.id_area,
+              id_departamento: this.usuario_activo.id_departamento,
+              id_perfil: this.usuario_activo.id_perfil,
+              nombre: "Yo mismo",
+              usuario: this.usuario_activo.usuario});
             this.area_activa=data.area[0];
             this.form.id_area=this.area_activa.id;
           }

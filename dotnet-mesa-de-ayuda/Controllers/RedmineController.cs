@@ -90,6 +90,9 @@ namespace dotnet_mesa_de_ayuda.Controllers
           .ExecuteListDynamic(),
           departamentos= qb.Table("ma.departamento")
           .Select("id","nombre")
+          .ExecuteListDynamic(),
+          areas= qb.Table("ma.area")
+          .Select("id","nombre")
           .ExecuteListDynamic()
           };
 
@@ -165,6 +168,7 @@ namespace dotnet_mesa_de_ayuda.Controllers
       public float  id_area { get; set; }
       public float  id_departamento { get; set; }
       public string usuario_asignado { get; set; }
+      public string usuario_creacion { get; set; }
       public string descripcion { get; set; }
       public float interno_externo { get; set; }
       public string fecha_fin { get; set; }
@@ -186,6 +190,7 @@ namespace dotnet_mesa_de_ayuda.Controllers
             payload.id_area,
             payload.id_departamento,
             payload.usuario_asignado,
+            payload.usuario_creacion,
             payload.descripcion,
             payload.interno_externo,
             fecha_fin,
@@ -337,52 +342,70 @@ namespace dotnet_mesa_de_ayuda.Controllers
     }
 
     [HttpPost("asuntos-pendientes")]
-    public object GetSolicitudesPendientes([FromBody] JObject payloadJO)
+    public object GetAsuntosPendientes([FromBody] JObject payloadJO)
     {
       dynamic payload = payloadJO.ToObject(typeof(ExpandoObject));
       var qb = new QueryBuilder.QueryBuilder((string)Miscelanea.Configuracion.Get.connections.capnet);
-      
-      var qSolicitudes = qb.Table("ma.solicitudes as s")
-        .Join("ma.concesionarios as c", "s.id_agencia", "c.id")
-        .Join("ma.modulos as m", "s.id_modulo", "m.id")
-        .Join("ma.solicitudes_estados as se", "s.id", "se.id_solicitud")
-        .LeftJoin("usuarios.v_usuarios as u", "u.usuario", "s.usuario_asignado")
-        .Select("s.id",
-          "s.asunto",
-          "se.estado",
-          "s.id_agencia",
-          "c.nombre as nombre_agencia",
-          "m.id as id_modulo",
-          "m.categoria as nombre_categoria",
-          "m.modulo as nombre_modulo",
-          "s.descripcion",
-          "s.email",
-          "s.fecha_registro",
-          "se.fecha_actualizacion",
-          "se.id_peticion_redmine",
-          "s.no_orden",
-          "s.no_placas",
-          "s.no_cita",
-          "s.motivo_cierre",
-          "s.detalle_cierre",
-          "s.usuario_asignado",
-          "u.nombre as nombre_usuario_asignado",
-          "se.fecha_fin")
-        .Where("s.estado", "abierta");
-        if ((int)payload.idAgencia!=0){
-          qSolicitudes.Where("s.id_agencia",payload.idAgencia);
+     // var estados = new String[]{"cancelado","suspendido","validado"};
+      var qAsuntos = qb.Table("ma.asuntos as asu") 
+        .Join("ma.departamento as de", "asu.id_departamento", "de.id")
+        .Join("ma.area as ar", "asu.id_area", "ar.id")
+        .Select(
+          "asu.id",
+          "asu.id_area",
+          "ar.nombre as nombre_area",
+          "asu.id_departamento",
+          "de.nombre as nombre_departamento",
+          "asu.usuario_asignado",
+          "asu.motivo_cierre",
+          "asu.descripcion",
+          "asu.interno_externo",
+          "asu.fecha_registro",
+          "asu.fecha_fin",
+          "asu.fecha_suspencion",
+          "asu.fecha_actualizacion",
+          "asu.estado",
+          "asu.asunto",
+          "asu.email",
+          "asu.detalle_suspension",
+          "asu.fecha_cancelacion",
+          "asu.detalle_cancelado",
+          "asu.fecha_validacion",
+          "asu.detalle_rechazo",
+          "asu.usuario_rechazo",
+          "asu.usuario_creacion")
+        .WhereRaw("asu.estado not in ('cancelado','suspendido','validado')");
+        DateTime? fecha_desde = !string.IsNullOrWhiteSpace((string)payload.fecha_desde) ?
+          DateTime.ParseExact(payload.fecha_desde, "yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture) :
+          null;
+        DateTime? fecha_hasta = !string.IsNullOrWhiteSpace((string)payload.fecha_hasta) ?
+          DateTime.ParseExact(payload.fecha_hasta, "yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture) :
+          null;
+        if (fecha_desde == null && fecha_hasta != null)
+        {
+          fecha_desde = fecha_hasta;
+          fecha_hasta = null;
         }
+        if (fecha_desde != null && fecha_hasta != null)
+          qAsuntos.WhereRaw("cast(?? as date) between ? and ?", "asu.fecha_registro", fecha_desde, fecha_hasta);
+        else if (fecha_desde != null && fecha_hasta == null)
+          qAsuntos.WhereRaw("cast(?? as date) = ?", "asu.fecha_registro", fecha_desde);
+        else
+          qAsuntos.Limit(100);
         if (!string.IsNullOrWhiteSpace((string)payload.usuario)){
-          qSolicitudes.Where("s.usuario_asignado", (string)payload.usuario);
+          qAsuntos.Where("asu.usuario_asignado", (string)payload.usuario);
         }
-      var solicitudes=qSolicitudes.ExecuteListDynamic();
-      foreach (var solicitud in solicitudes)
+        
+      //Console.WriteLine(qAsuntos.ToString());
+      var asuntos=qAsuntos.ExecuteListDynamic();
+      foreach (var asunto in asuntos)
       {
-        var ds = (IDictionary<string, object>)solicitud;
-        ds["contactos"] = qb.Table("ma.concesionarios_contactos")
+        var ds = (IDictionary<string, object>)asunto;
+        ds["contactos"] = (object)null;
+        /*qb.Table("ma.concesionarios_contactos")
           .Where("id_concesionario", ds["id_agencia"])
           .Select("rv", "nombre", "cargo", "telefono", "email")
-          .ExecuteListDynamic();
+          .ExecuteListDynamic();*/
         ds["evidencias"] = qb.Table("ma.evidencias")
           .Where("id_solicitud", ds["id"])
           .Select("id", "ruta")
@@ -390,12 +413,12 @@ namespace dotnet_mesa_de_ayuda.Controllers
       }
       return new
       {
-        solicitudes,
-        motivosCierre = db.Table("ma.motivos_cierre")
+        asuntos,
+        motivos_cierre = db.Table("ma.motivos_cierre")
           .Select("id", "descripcion")
           .ExecuteDataTable(),
-        usuarios = db.Table("usuarios.v_usuarios")
-          .Select("usuario", "nombre")
+        todos_usuarios = db.Table("ma.usuario")
+          .Select("usuario", "nombre","id_area","id_departamento","id")
           .ExecuteDataTable()
       };
     }
@@ -546,6 +569,206 @@ namespace dotnet_mesa_de_ayuda.Controllers
           .Select("usuario", "nombre")
           .ExecuteDataTable()
       };
+    }
+
+
+    [HttpPost("asignar-asunto")]
+    public object AsignarAsunto([FromBody] JObject payloadJO) {
+      dynamic payload = payloadJO.ToObject(typeof(ExpandoObject));
+      db.Transaction(trx => {
+        trx.Table("ma.asuntos")
+          .Update(new {
+            estado = "turnado",
+            fecha_actualizacion = trx.Raw("getutcdate()"),
+            id_area = payload.id_area,
+            id_departamento = payload.id_departamento,
+            usuario_asignado = payload.usuario_asignado
+          })
+          .Where("id", payload.id_asunto)
+          .Execute();
+        trx.Table("ma.historial_estados")
+          .Insert(new {
+            fecha_hora = trx.Raw("getutcdate()"),
+            estado = "turnado",
+            id_usuario = payload.usuario.id,
+            id_area = payload.usuario.id_area,
+            id_departamento = payload.usuario.id_departamento
+          })
+          .Execute();
+      });
+      return null;
+    }
+    [HttpPost("informacion-asunto")]
+    public object InformacionAsunto([FromBody] JObject payloadJO) {
+      dynamic payload = payloadJO.ToObject(typeof(ExpandoObject));
+      db.Transaction(trx => {
+        trx.Table("ma.asuntos")
+          .Update(new {
+            estado = "informacion",
+            fecha_actualizacion = trx.Raw("getutcdate()"),
+            id_area = payload.id_area,
+            id_departamento = payload.id_departamento,
+            usuario_asignado = payload.usuario_asignado
+          })
+          .Where("id", payload.id_asunto)
+          .Execute();
+        trx.Table("ma.historial_estados")
+          .Insert(new {
+            fecha_hora = trx.Raw("getutcdate()"),
+            estado = "informacion",
+            id_usuario = payload.usuario.id,
+            id_area = payload.usuario.id_area,
+            id_departamento = payload.usuario.id_departamento
+          })
+          .Execute();
+      });
+      return null;
+    }
+
+    [HttpPost("validar-asunto")]
+    public object ValidarAsunto([FromBody] JObject payloadJO) {
+      dynamic payload = payloadJO.ToObject(typeof(ExpandoObject));
+      db.Transaction(trx => {
+        trx.Table("ma.asuntos")
+          .Update(new {
+            estado = "validado",
+            fecha_actualizacion = trx.Raw("getutcdate()"),
+            fecha_validacion = trx.Raw("getutcdate()"),
+            id_area = payload.id_area,
+            id_departamento = payload.id_departamento
+          })
+          .Where("id", payload.id_asunto)
+          .Execute();
+        trx.Table("ma.historial_estados")
+          .Insert(new {
+            fecha_hora = trx.Raw("getutcdate()"),
+            estado = "validado",
+            id_usuario = payload.id_usuario,
+            id_area = payload.id_area,
+            id_departamento = payload.id_departamento,
+            detalle_estado = ""
+          })
+          .Execute();
+      });
+      return null;
+    }
+
+    [HttpPost("terminar-asunto")]
+    public object TerminarAsunto([FromBody] JObject payloadJO) {
+      dynamic payload = payloadJO.ToObject(typeof(ExpandoObject));
+      db.Transaction(trx => {
+        trx.Table("ma.asuntos")
+          .Update(new {
+            estado = "terminado",
+            fecha_actualizacion = trx.Raw("getutcdate()"),
+            fecha_validacion = trx.Raw("getutcdate()"),
+            id_area = payload.id_area,
+            id_departamento = payload.id_departamento,
+            usuario_asignado= trx.Raw("usuario_creacion")
+          })
+          .Where("id", payload.id_asunto)
+          .Execute();
+        trx.Table("ma.historial_estados")
+          .Insert(new {
+            fecha_hora = trx.Raw("getutcdate()"),
+            estado = "terminado",
+            id_usuario = payload.id_usuario,
+            id_area = payload.id_area,
+            id_departamento = payload.id_departamento,
+            detalle_estado = ""
+          })
+          .Execute();
+      });
+      return null;
+    }
+
+    [HttpPost("rechazar-asunto")]
+    public object RechazarAsunto([FromBody] JObject payloadJO) {
+      dynamic payload = payloadJO.ToObject(typeof(ExpandoObject));
+      db.Transaction(trx => {
+        trx.Table("ma.asuntos")
+          .Update(new {
+            estado = "rechazado",
+            fecha_actualizacion = trx.Raw("getutcdate()"),
+            fecha_validacion = trx.Raw("getutcdate()"),
+            id_area = payload.id_area,
+            id_departamento = payload.id_departamento,
+            usuario_asignado= trx.Raw("usuario_creacion")
+          })
+          .Where("id", payload.id_asunto)
+          .Execute();
+        trx.Table("ma.historial_estados")
+          .Insert(new {
+            fecha_hora = trx.Raw("getutcdate()"),
+            estado = "rechazado",
+            id_usuario = payload.id_usuario,
+            id_area = payload.id_area,
+            id_departamento = payload.id_departamento,
+            detalle_estado = ""
+          })
+          .Execute();
+      });
+      return null;
+    }
+
+    [HttpPost("cancelar-asunto")]
+    public object CancelarAsunto([FromBody] JObject payloadJO) {
+      dynamic payload = payloadJO.ToObject(typeof(ExpandoObject));
+      db.Transaction(trx => {
+        trx.Table("ma.asuntos")
+          .Update(new {
+            estado = "cancelado",
+            fecha_actualizacion = trx.Raw("getutcdate()"),
+            fecha_cancelacion = trx.Raw("getutcdate()"),
+            detalle_cancelado = payload.detalle,
+            id_area = payload.id_area,
+            id_departamento = payload.id_departamento,
+            usuario_asignado = payload.usuario_asignado
+          })
+          .Where("id", payload.id_asunto)
+          .Execute();
+        trx.Table("ma.historial_estados")
+          .Insert(new {
+            fecha_hora = trx.Raw("getutcdate()"),
+            estado = "cancelado",
+            id_usuario = payload.id_usuario,
+            id_area = payload.id_area,
+            id_departamento = payload.id_departamento,
+            detalle_estado = payload.detalle
+          })
+          .Execute();
+      });
+      return null;
+    }
+
+    [HttpPost("suspender-asunto")]
+    public object SuspenderAsunto([FromBody] JObject payloadJO) {
+      dynamic payload = payloadJO.ToObject(typeof(ExpandoObject));
+      db.Transaction(trx => {
+        trx.Table("ma.asuntos")
+          .Update(new {
+            estado = "suspendido",
+            fecha_actualizacion = trx.Raw("getutcdate()"),
+            fecha_suspension = trx.Raw("getutcdate()"),
+            detalle_suspension = payload.detalle,
+            id_area = payload.id_area,
+            id_departamento = payload.id_departamento,
+            usuario_asignado = payload.usuario_asignado
+          })
+          .Where("id", payload.id_asunto)
+          .Execute();
+        trx.Table("ma.historial_estados")
+          .Insert(new {
+            fecha_hora = trx.Raw("getutcdate()"),
+            estado = "suspendido",
+            id_usuario = payload.id_usuario,
+            id_area = payload.id_area,
+            id_departamento = payload.id_departamento,
+            detalle_estado = payload.detalle
+          })
+          .Execute();
+      });
+      return null;
     }
 
     [HttpPost("cerrar-solicitud")]
